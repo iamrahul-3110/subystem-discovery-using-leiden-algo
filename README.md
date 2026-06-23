@@ -39,32 +39,47 @@ It takes a **call graph** (a map of which Java class calls which other class) an
 
 ## 2. Quick Start
 
-**Requirements:** Java 17+, Maven
+This project consists of two parts: a **Java Spring Boot backend** and a **Vue 3 / Vite frontend**.
 
-```powershell
-# Navigate to the java project
-cd C:\Project\subsystem-discovery-implementation\java
+### Requirements
+- **Java 17+** (to run the backend)
+- **Maven** (to build and run the backend)
+- **Node.js 18+** & **npm** (to run the frontend UI)
 
-# Run the application
-mvn clean spring-boot:run
-```
+---
 
-The application starts on **port 8081** with context path `/codeanalyzer/server`.
+### Step 1: Run the Backend (Spring Boot)
 
-| URL | Purpose |
-|---|---|
-| `http://localhost:8081/codeanalyzer/server` | Main frontend UI |
-| `http://localhost:8081/codeanalyzer/server/h2-console` | H2 database console (for local dev) |
+1. Set your LLM API keys as environment variables in your terminal (required if using LLM labeling):
+   ```powershell
+   # In PowerShell:
+   $env:OPENROUTER_API_KEY="your-openrouter-key"
+   $env:GEMINI_API_KEY="your-gemini-key"
+   ```
+2. Navigate to the `java` directory and start the application:
+   ```powershell
+   cd c:\Project\Backup\subsystem-discovery-implementation\java
+   mvn clean spring-boot:run
+   ```
+   The backend will start on **port 8081** with context path `/codeanalyzer/server`.
+   - **H2 Database Console:** `http://localhost:8081/codeanalyzer/server/h2-console`
+     - JDBC URL: `jdbc:h2:mem:subsystem_discovery`
+     - User: `sa` (no password)
 
-H2 console settings: JDBC URL `jdbc:h2:mem:subsystem_discovery`, user `sa`, password empty.
+---
 
-If Maven is not installed:
-```powershell
-winget install Apache.Maven
-# Reopen PowerShell, then verify:
-mvn -v
-java -version
-```
+### Step 2: Run the Frontend (Vue 3 / Vite)
+
+1. Open a new terminal window, navigate to the `poc-ui` directory, and install dependencies:
+   ```powershell
+   cd c:\Project\Backup\subsystem-discovery-implementation\poc-ui
+   npm install
+   ```
+2. Start the Vite development server:
+   ```powershell
+   npm run dev
+   ```
+   The frontend will start on **port 5173**. Open `http://localhost:5173/` in your browser.
 
 ---
 
@@ -73,35 +88,44 @@ java -version
 ```
 subsystem-discovery-implementation/
 │
-├── README.md                          ← This file
-├── subsystem-architecture-visualizer.html  ← Interactive visual walkthrough
-├── postman/                           ← Postman collections for testing
+├── README.md                           ← This guide
+├── subsystem-architecture-visualizer.html ← Interactive visual walkthrough
+├── postman/                            ← Postman collections for testing
 │
-├── java/                              ← THE MAIN APPLICATION (run this)
-│   ├── pom.xml                        ← Maven dependencies
+├── java/                               ← BACKEND APPLICATION (Spring Boot)
+│   ├── pom.xml                         ← Maven dependencies
 │   └── src/main/
 │       ├── java/com/example/subsystemdiscovery/
-│       │   ├── SubsystemDiscoveryApplication.java   ← App entry point
-│       │   ├── api/                   ← REST controllers & error handling
-│       │   ├── config/                ← Configuration classes
-│       │   ├── domain/                ← Internal data models
-│       │   ├── dto/                   ← Request/response data shapes
-│       │   ├── repository/            ← Database access
-│       │   └── service/               ← All the business logic
+│       │   ├── SubsystemDiscoveryApplication.java  ← App entry point
+│       │   ├── api/                    ← REST controllers & error handling
+│       │   ├── config/                 ← Configuration classes
+│       │   ├── domain/                 ← Internal data models
+│       │   ├── dto/                    ← Request/response data shapes
+│       │   ├── repository/             ← Database access
+│       │   └── service/                ← Business logic (Leiden + LLM orchestration)
 │       └── resources/
-│           ├── application.yml        ← App configuration
-│           ├── schema.sql             ← Creates H2 demo tables
-│           ├── mapper/                ← MyBatis SQL XML files
-│           └── static/index.html      ← Frontend web UI
+│           ├── application.yml         ← App settings & LLM configuration
+│           ├── schema.sql              ← Creates H2 demo tables
+│           └── mapper/                 ← MyBatis SQL mappings
 │
-└── movable-code/                      ← Reference/portable version of the backend
-    └── subsystem-discovery-db-only/
-        ├── backend/                   ← Standalone Spring Boot version
-        └── config/
-            └── application-postgres-example.yml  ← Production PostgreSQL config
+├── poc-ui/                             ← FRONTEND APPLICATION (Vue 3 + Vite)
+│   ├── src/
+│   │   ├── components/                 ← UI components (e.g. HelloWorld.vue)
+│   │   ├── App.vue                     ← Main application layout
+│   │   └── main.js                     ← Vue app entry point
+│   ├── package.json                    ← Node dependencies
+│   └── vite.config.js                  ← Vite configuration
+│
+└── subsystem/                          ← REUSABLE CORE ENGINE (standalone version)
+    ├── backend/                        ← Core Spring Boot library
+    └── config/
+        └── application-postgres-example.yml ← Production PostgreSQL database config
 ```
 
-> **Note for new developers:** The `java/` folder is the runnable application. The `movable-code/` folder is a portable reference copy — same logic, packaged separately for integration into a different project (e.g. the Analyzer server).
+> **Note for new developers:** 
+> - The `java/` directory is the backend server that implements the Leiden algorithm and calls the LLM.
+> - The `poc-ui/` directory is the modern web user interface where you can upload graphs and see visual subsystem groupings.
+> - The `subsystem/` directory is the core, portable version of the engine packaged for integration into other servers.
 
 ---
 
@@ -909,18 +933,17 @@ spring:
 
 subsystem:
   llm:
-    enabled: false                                        # Set true to activate LLM
-    base-url: https://aipro.sdsdev.co.kr/general/api/v1  # LLM gateway URL
-    api-key: 5a502d87-efb4-4783-8e2e-521331ae6e01         # Bearer token
-    service-id: Analyzer                                  # X-Service-Id header
-    user-identifier: s.mayank@samsung.com                 # user_identifier header
-    model-id: "42"                                        # model header
-    max-tokens: 24576
-    temperature: 1.0
-    top-k: 0
-    connect-timeout-ms: 5000
-    read-timeout-ms: 60000
+    enabled: true                                          # Set to true to activate LLM naming
+    openrouter-api-key: ${OPENROUTER_API_KEY:}             # Loaded from environment variable
+    openrouter-url: https://openrouter.ai/api/v1/chat/completions
+    gemini-api-key: ${GEMINI_API_KEY:}                     # Loaded from environment variable
+    max-tokens: 4000
+    temperature: 0.7
+    connect-timeout-ms: 10000
+    read-timeout-ms: 180000
 ```
+
+> **Note on API Keys:** The application reads `openrouter-api-key` and `gemini-api-key` from environment variables (`OPENROUTER_API_KEY` and `GEMINI_API_KEY`). This keeps your credentials secure and avoids pushing them to Git.
 
 **To switch to PostgreSQL** (production), replace the datasource block with your real connection details and set `sql.init.mode: never`.
 
