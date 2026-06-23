@@ -1,12 +1,5 @@
 <template>
-  <aside class="tree-panel" style="flex: '0 0 auto'">
-    <div class="panel-heading">
-      <div>
-        <p class="eyebrow">Cluster Tree</p>
-        <h2>Subsystems and associated nodes</h2>
-      </div>
-    </div>
-
+  <aside class="tree-panel" style="flex: 0 0 auto">
     <div class="cluster-list">
       <article
         v-for="cluster in sortedSubsystems"

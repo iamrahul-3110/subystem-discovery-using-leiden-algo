@@ -124,9 +124,10 @@ public class PocController {
                                              @RequestParam(defaultValue = "0.7") double consensusThreshold,
                                              @RequestParam(defaultValue = "1.0") double resolution,
                                              @RequestParam(defaultValue = "43") String llmModel,
-                                             @RequestParam(defaultValue = "MEDIUM_DETAILED") String summaryType) {
-        log.info("Generating POC summary applicationId={}, analysisTime={}, model={}, type={}",
-                applicationId, analysisTime, llmModel, summaryType);
+                                             @RequestParam(defaultValue = "MEDIUM_DETAILED") String summaryType,
+                                             @RequestParam(required = false) String customPrompt) {
+        log.info("Generating POC summary applicationId={}, analysisTime={}, model={}, type={}, customPrompt={}",
+                applicationId, analysisTime, llmModel, summaryType, customPrompt);
         try {
             int effectiveRuns = capRuns(applicationId, analysisTime, runs);
             SummaryType resolvedSummaryType = parseSummaryType(summaryType);
@@ -147,13 +148,13 @@ public class PocController {
             String summary;
             try {
                 LlmProvider provider = llmProviderFactory.getProvider(providerName);
-                summary = provider.generateSummary(response, resolvedSummaryType.name(), llmModel);
+                summary = provider.generateSummary(response, resolvedSummaryType.name(), llmModel, customPrompt);
             } catch (Exception realFailure) {
                 fallback = true;
                 providerName = "MOCK";
                 log.warn("Real LLM summary unavailable; falling back to mock provider: {}", realFailure.getMessage());
                 summary = llmProviderFactory.getProvider("MOCK")
-                        .generateSummary(response, resolvedSummaryType.name(), llmModel);
+                        .generateSummary(response, resolvedSummaryType.name(), llmModel, customPrompt);
             }
 
             Map<String, Object> body = new LinkedHashMap<>();
@@ -217,6 +218,7 @@ public class PocController {
         return switch (value.toUpperCase()) {
             case "SMALL", "LESS", "LESS_DETAILED" -> SummaryType.LESS_DETAILED;
             case "LARGE", "COMPLETE", "COMPLETE_DETAILED" -> SummaryType.COMPLETE_DETAILED;
+            case "CUSTOM" -> SummaryType.CUSTOM;
             default -> SummaryType.MEDIUM_DETAILED;
         };
     }

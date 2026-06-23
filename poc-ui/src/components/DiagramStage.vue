@@ -1,5 +1,5 @@
 <template>
-  <section class="diagram-panel" style="flex: '1 1 0%'; min-width: 0">
+  <section class="diagram-panel" style="flex: 1 1 0%; min-width: 0">
     <div
       class="mermaid-stage"
       ref="stageRef"
@@ -9,6 +9,67 @@
       @mouseleave="onMouseLeave"
       @wheel="onWheel"
     >
+      <div v-if="mermaidSvg && !loadingDiscovery" class="mermaid-info-container tooltip-container" @mousedown.stop>
+        <i
+          class="tooltip-icon"
+          @mouseenter="showInfoPopup"
+          @mouseleave="hideInfoPopup"
+          style="font-size: 16px; cursor: help; padding: 4px; display: inline-block;"
+        >ⓘ</i>
+
+        <Transition name="fade">
+          <div
+            v-if="showPopup"
+            class="mermaid-info-popup"
+            @mouseenter="showInfoPopup"
+            @mouseleave="hideInfoPopup"
+          >
+            <div class="popup-arrow"></div>
+            <h4>Graph Interpretation</h4>
+            
+            <div class="legend-section">
+              <h5>Coupling Strength (Lines)</h5>
+              <div class="legend-item">
+                <span class="line-indicator high"></span>
+                <span><strong>High Coupling (Red):</strong> Strong dependencies between subsystems.</span>
+              </div>
+              <div class="legend-item">
+                <span class="line-indicator medium"></span>
+                <span><strong>Medium Coupling (Blue):</strong> Moderate dependencies between subsystems.</span>
+              </div>
+              <div class="legend-item">
+                <span class="line-indicator low"></span>
+                <span><strong>Low Coupling (Grey):</strong> Weak dependencies / loose coupling.</span>
+              </div>
+            </div>
+
+            <div class="legend-section">
+              <h5>Components & Layers</h5>
+              <div class="legend-item">
+                <span class="node-indicator root-node"></span>
+                <span><strong>Subsystem Root:</strong> Orchestrator node with stability scores.</span>
+              </div>
+              <div class="legend-item">
+                <span class="node-indicator api-node"></span>
+                <span><strong>API Controller:</strong> HTTP entry points / controller layers.</span>
+              </div>
+              <div class="legend-item">
+                <span class="node-indicator service-node"></span>
+                <span><strong>Service Layer:</strong> Core business logic rules.</span>
+              </div>
+              <div class="legend-item">
+                <span class="node-indicator repo-node"></span>
+                <span><strong>Repository Layer:</strong> Database tables and entities.</span>
+              </div>
+              <div class="legend-item">
+                <span class="node-indicator class-node"></span>
+                <span><strong>Internal Details:</strong> Supporting helper classes and methods.</span>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </div>
+
       <div v-if="mermaidSvg && !loadingDiscovery" class="mermaid-controls" @mousedown.stop>
         <button type="button" @click="zoomIn" title="Zoom In">＋</button>
         <button type="button" @click="zoomOut" title="Zoom Out">－</button>
@@ -59,6 +120,21 @@ const props = defineProps({
   sortedSubsystems: { type: Array, required: true },
   selectedCluster: { type: Object, default: null }
 })
+
+const showPopup = ref(false)
+let hideTimeout = null
+
+function showInfoPopup() {
+  if (hideTimeout) clearTimeout(hideTimeout)
+  showPopup.value = true
+}
+
+function hideInfoPopup() {
+  if (hideTimeout) clearTimeout(hideTimeout)
+  hideTimeout = setTimeout(() => {
+    showPopup.value = false
+  }, 200)
+}
 
 const emit = defineEmits(['toggle-cluster'])
 

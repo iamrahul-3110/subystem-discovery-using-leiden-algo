@@ -41,7 +41,8 @@ public class RealLlmProvider implements LlmProvider {
     public String generateSummary(
             SubsystemDiscoveryResponse response,
             String summaryType,
-            String llmModel) {
+            String llmModel,
+            String customPrompt) {
 
         if (!properties.isEnabled()) {
             log.warn(
@@ -57,10 +58,12 @@ public class RealLlmProvider implements LlmProvider {
                 summaryType,
                 llmModel);
 
-        String prompt =
-                buildPrompt(
-                        response,
-                        summaryType);
+        String prompt;
+        if ("CUSTOM".equalsIgnoreCase(summaryType) && StringUtils.hasText(customPrompt)) {
+            prompt = buildCustomPrompt(response, customPrompt);
+        } else {
+            prompt = buildPrompt(response, summaryType);
+        }
 
         String model =
                 StringUtils.hasText(llmModel)
@@ -521,5 +524,29 @@ public class RealLlmProvider implements LlmProvider {
                                 .append(", edges=")
                                 .append(link.edgeCount())
                                 .append("\n");
+        }
+
+        private String buildCustomPrompt(SubsystemDiscoveryResponse response, String customPrompt) {
+                StringBuilder prompt = new StringBuilder();
+
+                prompt.append("You are a senior software architect performing domain decomposition analysis.\n\n")
+                      .append("Based on the application data below, please answer this specific query from the user:\n")
+                      .append("\"").append(customPrompt).append("\"\n\n")
+                      .append("Use business-domain vocabulary. Base your analysis ONLY on the data provided below.\n\n")
+                      .append("================ APPLICATION CONTEXT ================\n\n");
+
+                prompt.append("Application Name: ")
+                                .append(response.applicationKey())
+                                .append("\n\n");
+
+                response.subsystems().stream()
+                                .forEach(subsystem -> appendBusinessSubsystem(prompt, subsystem));
+
+                prompt.append("\nSubsystem Interactions:\n");
+
+                response.subsystemLinks().stream()
+                                .forEach(link -> appendLink(prompt, link));
+
+                return prompt.toString();
         }
 }

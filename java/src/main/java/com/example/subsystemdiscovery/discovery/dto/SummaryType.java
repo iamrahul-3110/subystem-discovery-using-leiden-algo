@@ -28,5 +28,8 @@ public enum SummaryType {
      * Comprehensive deep-dive: all subsystem responsibilities, full coupling
      * analysis, architectural concerns, and actionable improvement recommendations (~600 words).
      */
-    COMPLETE_DETAILED
+    COMPLETE_DETAILED,
+
+    /** Custom chat/prompt analysis dynamically specified by the user. */
+    CUSTOM
 }

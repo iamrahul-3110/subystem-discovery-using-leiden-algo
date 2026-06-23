@@ -2,7 +2,7 @@
   <aside class="side-rail" :class="{ 'side-rail-collapsed': isCollapsed }">
     <div class="brand-mark">GI</div>
     <nav>
-      <button class="nav-item active" type="button">Subsystem Discovery</button>
+      <div class="sidebar-feature-heading">Subsystem Discovery</div>
     </nav>
 
     <DatasetPanel
@@ -31,11 +31,13 @@
     <AiSummaryPanel
       :llmModel="llmModel"
       :summaryType="summaryType"
+      :customPrompt="customPrompt"
       :llmModels="llmModels"
       :loading="loading.summary"
       :hasDiscovery="hasDiscovery"
       @update:llmModel="$emit('update:llmModel', $event)"
       @update:summaryType="$emit('update:summaryType', $event)"
+      @update:customPrompt="$emit('update:customPrompt', $event)"
       @summary="$emit('summary')"
     />
   </aside>
@@ -58,6 +60,7 @@ defineProps({
   resolution: { type: Number, required: true },
   llmModel: { type: String, required: true },
   summaryType: { type: String, required: true },
+  customPrompt: { type: String, default: '' },
   llmModels: { type: Array, required: true },
   hasDataset: { type: Boolean, default: false },
   hasDiscovery: { type: Boolean, default: false }
@@ -71,6 +74,7 @@ defineEmits([
   'update:resolution',
   'update:llmModel',
   'update:summaryType',
+  'update:customPrompt',
   'generate',
   'discover',
   'summary'

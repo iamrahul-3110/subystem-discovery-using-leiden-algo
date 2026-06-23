@@ -19,9 +19,21 @@ public class MockLlmProvider implements LlmProvider {
     }
 
     @Override
-    public String generateSummary(SubsystemDiscoveryResponse response, String summaryType, String llmModel) {
+    public String generateSummary(SubsystemDiscoveryResponse response, String summaryType, String llmModel, String customPrompt) {
         log.info("Generating Mock LLM summary for application '{}' (type='{}', model='{}')", 
                 response.applicationKey(), summaryType, llmModel);
+        
+        if ("CUSTOM".equalsIgnoreCase(summaryType) && org.springframework.util.StringUtils.hasText(customPrompt)) {
+            log.info("Mock LLM Provider: building Custom prompt response.");
+            return "<h3>Custom Query Response</h3><p>Based on your query: <em>\"" + customPrompt + "\"</em>, here is the architectural insight:</p>" +
+                   "<ul>" +
+                   "<li>The application <strong>" + response.applicationKey() + "</strong> contains " + response.summary().totalNodes() + " nodes and " + response.summary().subsystemCount() + " logical subsystems.</li>" +
+                   "<li>Main logical subsystems detected: " + response.subsystems().stream().limit(4).map(s -> s.name()).collect(Collectors.joining(", ")) + ".</li>" +
+                   "<li>Consensus stability average: <strong>" + response.summary().averageStability() + "</strong>.</li>" +
+                   "</ul>" +
+                   "<p>This analysis matches your custom query for target domains and components configuration.</p>";
+        }
+
         return switch (summaryType.toUpperCase()) {
             case "LESS_DETAILED" -> {
                 log.info("Mock LLM Provider: building Executive Overview.");

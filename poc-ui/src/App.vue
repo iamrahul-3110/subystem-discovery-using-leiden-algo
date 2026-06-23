@@ -35,6 +35,7 @@
         :resolution="leiden.resolution"
         :llmModel="llm.model"
         :summaryType="llm.summaryType"
+        :customPrompt="llm.customPrompt"
         :llmModels="llmModels"
         :hasDataset="!!dataset"
         :hasDiscovery="!!discovery"
@@ -45,6 +46,7 @@
         @update:resolution="leiden.resolution = $event"
         @update:llmModel="llm.model = $event"
         @update:summaryType="llm.summaryType = $event"
+        @update:customPrompt="llm.customPrompt = $event"
         @generate="generateDataset"
         @discover="runDiscovery"
         @summary="generateSummary"
@@ -79,7 +81,31 @@
             :averageStability="discovery.summary.averageStability"
           />
 
-          <section class="discovery-grid" ref="resizerContainerRef">
+          <div class="workspace-section-header">
+            <h2>Cluster Tree Subsystems and associated nodes graph</h2>
+            <button
+              type="button"
+              class="collapse-toggle-btn icon-only"
+              @click="isDiscoveryCollapsed = !isDiscoveryCollapsed"
+              :title="isDiscoveryCollapsed ? 'Expand Viewport' : 'Collapse Viewport'"
+            >
+              <svg v-if="isDiscoveryCollapsed" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+              <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M18 15l-6-6-6 6" />
+              </svg>
+            </button>
+          </div>
+
+          <section
+            class="discovery-grid"
+            :class="{
+              'collapsed': isDiscoveryCollapsed,
+              'summary-collapsed': isSummaryCollapsed
+            }"
+            ref="resizerContainerRef"
+          >
             <ClusterTree
               :sortedSubsystems="sortedSubsystems"
               :selectedClusterId="selectedClusterId"
@@ -106,6 +132,9 @@
             :summaryText="summaryText"
             :formattedSummaryHtml="formattedSummaryHtml"
             :actualModelDisplay="actualModelDisplay"
+            :isCollapsed="isSummaryCollapsed"
+            :isDiscoveryCollapsed="isDiscoveryCollapsed"
+            @toggle-collapse="isSummaryCollapsed = !isSummaryCollapsed"
           />
         </template>
       </main>
@@ -126,6 +155,9 @@ import MetricsGrid from './components/MetricsGrid.vue'
 import ClusterTree from './components/ClusterTree.vue'
 import DiagramStage from './components/DiagramStage.vue'
 import ArchitectureSummary from './components/ArchitectureSummary.vue'
+
+const isDiscoveryCollapsed = ref(false)
+const isSummaryCollapsed = ref(false)
 
 mermaid.initialize({
   startOnLoad: false,
@@ -226,7 +258,8 @@ const leiden = reactive({
 
 const llm = reactive({
   model: 'deepseek/deepseek-chat',
-  summaryType: 'MEDIUM_DETAILED'
+  summaryType: 'MEDIUM_DETAILED',
+  customPrompt: ''
 })
 
 const loading = reactive({
@@ -340,7 +373,8 @@ async function generateSummary() {
       params: {
         ...discoveryParams(),
         llmModel: llm.model,
-        summaryType: llm.summaryType
+        summaryType: llm.summaryType,
+        customPrompt: llm.customPrompt
       }
     })
     summaryText.value = response.data.summary
