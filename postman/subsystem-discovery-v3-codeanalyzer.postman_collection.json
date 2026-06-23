@@ -1,0 +1,269 @@
+{
+  "info": {
+    "_postman_id": "subsystem-discovery-v3",
+    "name": "Subsystem Discovery Engine v3 (Codeanalyzer)",
+    "description": "Complete API collection for the Subsystem Discovery Engine.\n\nBase URL  : http://localhost:8081/codeanalyzer/server\nContext path is /codeanalyzer/server (set via server.servlet.context-path in application.yml).\n\nFolders:\n  1. DB-only (Production) – endpoints that load graph data from the database by applicationId\n  2. Demo / Synthetic      – built-in example and synthetic graph endpoints (no DB needed)\n  3. Transform only        – inspect the Leiden input without running the full algorithm",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8081/codeanalyzer/server",
+      "type": "string",
+      "description": "Base URL including context path. Change host/port here to point at a different environment."
+    },
+    {
+      "key": "application_id",
+      "value": "14",
+      "type": "string",
+      "description": "Numeric ID of the application in the Analyzer database (tb_node.application_id)."
+    },
+    {
+      "key": "application_key",
+      "value": "analyzer-db",
+      "type": "string",
+      "description": "Human-readable key for the application (used as a cache key internally)."
+    }
+  ],
+  "item": [
+    {
+      "name": "1 – DB-only (Production) Endpoints",
+      "description": "These three endpoints are the ones called by the Analyzer integration. They load node/relation graph data from the database using applicationId.",
+      "item": [
+        {
+          "name": "Discover Subsystems (DB) – POST",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/codeanalyzer/analysis/{{application_id}}/subsystem/discover",
+              "host": ["{{base_url}}"],
+              "path": ["api", "codeanalyzer", "analysis", "{{application_id}}", "subsystem", "discover"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": {{application_id}},\n  \"applicationKey\": \"{{application_key}}\",\n  \"graphTypes\": [\"CALL_GRAPH\"],\n  \"runs\": 5,\n  \"consensusThreshold\": 0.65,\n  \"resolution\": 1.0,\n  \"useLlmLabels\": false,\n  \"graphs\": null\n}"
+            },
+            "description": "Runs the full Leiden subsystem discovery algorithm using graph data loaded from the database.\n\nPath variable:\n  {applicationId} – e.g. 14\n\nBody fields:\n  graphTypes         – one or more of CALL_GRAPH, CODE_ASSOCIATION, HTTP_API, CLASS_DIAGRAM\n  runs               – number of Leiden iterations (higher = more stable, slower)\n  consensusThreshold – fraction of runs a node-cluster assignment must appear in (0–1)\n  resolution         – Leiden resolution parameter (higher = smaller clusters)\n  useLlmLabels       – set true to call OpenAI for subsystem names (requires OPENAI_API_KEY)\n\nReturns: SubsystemDiscoveryResponse"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Leiden Input (DB) – POST",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/codeanalyzer/analysis/{{application_id}}/subsystem/leiden-input",
+              "host": ["{{base_url}}"],
+              "path": ["api", "codeanalyzer", "analysis", "{{application_id}}", "subsystem", "leiden-input"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": {{application_id}},\n  \"applicationKey\": \"{{application_key}}\",\n  \"graphTypes\": [\"CALL_GRAPH\"],\n  \"runs\": 5,\n  \"consensusThreshold\": 0.65,\n  \"resolution\": 1.0,\n  \"useLlmLabels\": false,\n  \"graphs\": null\n}"
+            },
+            "description": "Loads graph data from the database and returns the normalised Leiden input (nodes + weighted edges) WITHOUT running the Leiden algorithm. Useful for inspecting the weighted graph that would be fed into the algorithm.\n\nReturns: LeidenInputDto { nodeCount, edgeCount, nodes[], edges[] }"
+          },
+          "response": []
+        },
+        {
+          "name": "Transform Inline JSON → Leiden Input – POST",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/codeanalyzer/subsystems/transform/leiden-input",
+              "host": ["{{base_url}}"],
+              "path": ["api", "codeanalyzer", "subsystems", "transform", "leiden-input"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": {{application_id}},\n  \"applicationKey\": \"{{application_key}}\",\n  \"graphTypes\": [\"CALL_GRAPH\"],\n  \"runs\": 5,\n  \"consensusThreshold\": 0.65,\n  \"resolution\": 1.0,\n  \"useLlmLabels\": false,\n  \"graphs\": null\n}"
+            },
+            "description": "Transforms the provided request (either inline graphs in the body or DB-loaded data when graphs is null) into a LeidenInputDto. Useful for debugging the normalisation step.\n\nReturns: LeidenInputDto { nodeCount, edgeCount, nodes[], edges[] }"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2 – Demo / Synthetic Graph Endpoints",
+      "description": "Built-in example and synthetically generated graphs. No database required. Good for smoke-testing the algorithm.",
+      "item": [
+        {
+          "name": "List Demo Examples – GET",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/subsystems/examples",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subsystems", "examples"]
+            },
+            "description": "Returns metadata for all hardcoded example graphs (e.g. analyzer-history). Use the returned 'key' value in the other example endpoints."
+          },
+          "response": []
+        },
+        {
+          "name": "Discover Example – analyzer-history – POST",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/subsystems/examples/analyzer-history/discover?runs=5&consensusThreshold=0.65&resolution=1.0&useLlmLabels=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subsystems", "examples", "analyzer-history", "discover"],
+              "query": [
+                { "key": "runs", "value": "5" },
+                { "key": "consensusThreshold", "value": "0.65" },
+                { "key": "resolution", "value": "1.0" },
+                { "key": "useLlmLabels", "value": "false" }
+              ]
+            },
+            "description": "Runs full Leiden discovery on the hardcoded analyzer-history example graph. No body needed – parameters are passed as query strings."
+          },
+          "response": []
+        },
+        {
+          "name": "Leiden Input Preview – analyzer-history – GET",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/subsystems/examples/analyzer-history/leiden-input",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subsystems", "examples", "analyzer-history", "leiden-input"]
+            },
+            "description": "Returns the pre-built Leiden input for the analyzer-history demo graph without running the algorithm."
+          },
+          "response": []
+        },
+        {
+          "name": "Raw Graph – analyzer-history – GET",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/subsystems/examples/analyzer-history/raw-graph",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subsystems", "examples", "analyzer-history", "raw-graph"]
+            },
+            "description": "Returns the raw RawGraphDto list for the analyzer-history demo (before normalisation)."
+          },
+          "response": []
+        },
+        {
+          "name": "Discover Synthetic – 100 Nodes – POST",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/subsystems/generated/100/discover?runs=5&consensusThreshold=0.65&resolution=1.0&useLlmLabels=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subsystems", "generated", "100", "discover"],
+              "query": [
+                { "key": "runs", "value": "5" },
+                { "key": "consensusThreshold", "value": "0.65" },
+                { "key": "resolution", "value": "1.0" },
+                { "key": "useLlmLabels", "value": "false" }
+              ]
+            },
+            "description": "Runs discovery on a synthetically generated graph with 100 nodes."
+          },
+          "response": []
+        },
+        {
+          "name": "Discover Synthetic – 1000 Nodes – POST",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/subsystems/generated/1000/discover?runs=3&consensusThreshold=0.65&resolution=1.0&useLlmLabels=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subsystems", "generated", "1000", "discover"],
+              "query": [
+                { "key": "runs", "value": "3" },
+                { "key": "consensusThreshold", "value": "0.65" },
+                { "key": "resolution", "value": "1.0" },
+                { "key": "useLlmLabels", "value": "false" }
+              ]
+            },
+            "description": "Runs discovery on a synthetically generated graph with 1000 nodes."
+          },
+          "response": []
+        },
+        {
+          "name": "Discover Synthetic – 10 000 Nodes – POST",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/subsystems/generated/10000/discover?runs=1&consensusThreshold=0.65&resolution=1.0&useLlmLabels=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subsystems", "generated", "10000", "discover"],
+              "query": [
+                { "key": "runs", "value": "1" },
+                { "key": "consensusThreshold", "value": "0.65" },
+                { "key": "resolution", "value": "1.0" },
+                { "key": "useLlmLabels", "value": "false" }
+              ]
+            },
+            "description": "Runs discovery on a large synthetically generated graph with 10,000 nodes (1 run, no consensus – fastest)."
+          },
+          "response": []
+        },
+        {
+          "name": "Leiden Input – Synthetic 100 Nodes – GET",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/subsystems/generated/100/leiden-input",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subsystems", "generated", "100", "leiden-input"]
+            },
+            "description": "Returns the Leiden input for the 100-node synthetic graph (no algorithm run)."
+          },
+          "response": []
+        },
+        {
+          "name": "Raw Graph – Synthetic 100 Nodes – GET",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/subsystems/generated/100/raw-graph",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subsystems", "generated", "100", "raw-graph"]
+            },
+            "description": "Returns the raw generated graph with 100 nodes before normalisation."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3 – Inline JSON Discovery (no DB)",
+      "description": "Pass full graph JSON directly in the request body. Useful for one-off testing without a database.",
+      "item": [
+        {
+          "name": "Discover – Inline JSON Body – POST",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/subsystems/discover",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subsystems", "discover"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": 101,\n  \"applicationKey\": \"analyzer-demo\",\n  \"graphTypes\": [\"CODE_ASSOCIATION\", \"CALL_GRAPH\", \"HTTP_API\", \"CLASS_DIAGRAM\"],\n  \"runs\": 20,\n  \"consensusThreshold\": 0.7,\n  \"resolution\": 1.0,\n  \"useLlmLabels\": false,\n  \"graphs\": [\n    {\n      \"graphType\": \"CODE_ASSOCIATION\",\n      \"nodeDataArray\": [\n        {\"key\": \"0\", \"text\": \"com.sds.analyzer.server.analyzer\", \"group\": \"\", \"isGroup\": true, \"type\": \"PACKAGE\"},\n        {\"key\": \"1\", \"text\": \"agent.data\", \"group\": \"0\", \"isGroup\": true, \"type\": \"PACKAGE\"},\n        {\"key\": \"2\", \"text\": \"app\", \"group\": \"1\", \"isGroup\": true, \"type\": \"PACKAGE\"},\n        {\"key\": \"3\", \"text\": \"impl\", \"group\": \"2\", \"isGroup\": true, \"type\": \"PACKAGE\"},\n        {\"key\": \"4\", \"text\": \"NodeServiceImpl\", \"group\": \"3\", \"isGroup\": false, \"type\": \"CLASS\"},\n        {\"key\": \"5\", \"text\": \"NodeService\", \"group\": \"2\", \"isGroup\": false, \"type\": \"CLASS\"},\n        {\"key\": \"6\", \"text\": \"NodeMapper\", \"group\": \"1\", \"isGroup\": false, \"type\": \"CLASS\"},\n        {\"key\": \"7\", \"text\": \"analysishistory\", \"group\": \"0\", \"isGroup\": true, \"type\": \"PACKAGE\"},\n        {\"key\": \"8\", \"text\": \"AnalysisHistoryService\", \"group\": \"7\", \"isGroup\": false, \"type\": \"CLASS\"}\n      ],\n      \"linkDataArray\": [\n        {\"from\": \"5\", \"to\": \"4\"},\n        {\"from\": \"4\", \"to\": \"6\"},\n        {\"from\": \"8\", \"to\": \"5\"}\n      ]\n    },\n    {\n      \"graphType\": \"HTTP_API\",\n      \"nodeDataArray\": [\n        {\"packageName\": \"com.sds.analyzer.server.analyzer.agent.data.rest\", \"name\": \"NodeController\", \"type\": \"CLASS\", \"key\": \"group_0\", \"fields\": [{\"name\": \"deleteNodeHistory(java.lang.Long,java.util.List)\", \"type\": \"METHOD\", \"key\": \"1001\"}]},\n        {\"packageName\": \"com.sds.analyzer.server.analyzer.agent.data.app\", \"name\": \"NodeService\", \"type\": \"CLASS\", \"key\": \"group_1\", \"fields\": [{\"name\": \"deleteNodeHistory(java.lang.Long,java.util.List)\", \"type\": \"METHOD\", \"key\": \"1002\"}]},\n        {\"name\": \"\", \"type\": \"URI\", \"key\": \"group_2\", \"fields\": [{\"name\": \"api/analyzer/history/nodes:DELETE\", \"type\": \"URI\", \"key\": \"1003\"}]}\n      ],\n      \"linkDataArray\": [\n        {\"from\": \"group_2\", \"fromPort\": \"1003\", \"to\": \"group_0\", \"toPort\": \"1001\"},\n        {\"from\": \"group_0\", \"fromPort\": \"1001\", \"to\": \"group_1\", \"toPort\": \"1002\"}\n      ]\n    }\n  ]\n}"
+            },
+            "description": "Runs full Leiden subsystem discovery using inline graph JSON. No database connection needed.\n\nThe 'graphs' array contains one or more RawGraphDto objects, each with:\n  graphType     – CALL_GRAPH | CODE_ASSOCIATION | HTTP_API | CLASS_DIAGRAM\n  nodeDataArray – list of node objects\n  linkDataArray – list of edge objects"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

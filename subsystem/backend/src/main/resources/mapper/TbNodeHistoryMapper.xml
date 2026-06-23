@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    MyBatis XML mapper for TbNodeHistoryMapper.
+    Namespace must match the fully-qualified name of the @Mapper interface.
+
+    All queries read from the HISTORY tables:
+        tb_node_history           – nodes per analysis snapshot
+        tb_node_detail_history    – split-level name details per node/snapshot
+        tb_node_relation_history  – call-graph edges per analysis snapshot
+
+    Every query is scoped to a single analysis snapshot by the composite key:
+        application_id  (Long)
+        analysis_time   (String / VARCHAR)
+-->
+<mapper namespace="com.example.subsystemdiscovery.repository.TbNodeHistoryMapper">
+
+    <!-- ================================================================
+         Result Maps
+         ================================================================ -->
+
+    <resultMap id="NodeRowResultMap"
+               type="com.example.subsystemdiscovery.repository.entity.NodeRow">
+        <constructor>
+            <idArg column="node_id"   javaType="String"/>
+            <arg   column="node_name" javaType="String"/>
+            <arg   column="node_type" javaType="String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="ApplicationMetadataResultMap"
+               type="com.example.subsystemdiscovery.repository.entity.ApplicationMetadata">
+        <constructor>
+            <arg   column="application_id"  javaType="Long"/>
+            <arg   column="application_key" javaType="String"/>
+        </constructor>
+    </resultMap>
+
+
+    <resultMap id="NodeDetailRowResultMap"
+               type="com.example.subsystemdiscovery.repository.entity.NodeDetailRow">
+        <constructor>
+            <idArg column="node_id"          javaType="String"/>
+            <arg   column="split_node_level" javaType="Integer"/>
+            <arg   column="split_node_name"  javaType="String"/>
+            <arg   column="split_node_type"  javaType="String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="NodeLinkRowResultMap"
+               type="com.example.subsystemdiscovery.repository.entity.NodeLinkRow">
+        <constructor>
+            <arg column="from_key" javaType="String"/>
+            <arg column="to_key"   javaType="String"/>
+        </constructor>
+    </resultMap>
+
+    <!-- ================================================================
+         selectApplicationMetadata
+         Retrieves the application ID and application key by analysis time.
+         ================================================================ -->
+    <select id="selectApplicationMetadata"
+            resultMap="ApplicationMetadataResultMap">
+        SELECT am.application_id,
+               am.application_key
+          FROM tb_node_history_master nhm
+          JOIN tb_application_master am
+            ON nhm.application_id = am.application_id
+         WHERE nhm.analysis_time = #{analysisTime}
+         LIMIT 1
+    </select>
+
+    <!-- ================================================================
+         selectNodes
+         Retrieves all nodes for the given (applicationId, analysisTime)
+         snapshot from tb_node_history.
+         ================================================================ -->
+    <select id="selectNodes"
+            resultMap="NodeRowResultMap">
+        SELECT CAST(node_id AS VARCHAR) AS node_id,
+               node_name,
+               node_type
+          FROM tb_node_history
+         WHERE application_id = #{applicationId}
+           AND analysis_time  = #{analysisTime}
+         ORDER BY node_id
+    </select>
+
+    <!-- ================================================================
+         selectNodeDetails
+         Retrieves split-level detail rows for all nodes of the snapshot.
+         Joined on both node_id AND analysis_time to stay within the same
+         snapshot (tb_node_detail_history has no use_yn column).
+         ================================================================ -->
+    <select id="selectNodeDetails"
+            resultMap="NodeDetailRowResultMap">
+        SELECT CAST(d.node_id AS VARCHAR) AS node_id,
+               d.split_node_level,
+               d.split_node_name,
+               d.split_node_type
+          FROM tb_node_detail_history d
+          JOIN tb_node_history        n
+            ON n.node_id       = d.node_id
+           AND n.analysis_time = d.analysis_time
+         WHERE n.application_id = #{applicationId}
+           AND n.analysis_time  = #{analysisTime}
+         ORDER BY d.node_id, d.split_node_level
+    </select>
+
+    <!-- ================================================================
+         selectLinks
+         Retrieves all call-graph edges for the given snapshot from
+         tb_node_relation_history.  parent_node_id → from, node_id → to.
+         ================================================================ -->
+    <select id="selectLinks"
+            resultMap="NodeLinkRowResultMap">
+        SELECT CAST(parent_node_id AS VARCHAR) AS from_key,
+               CAST(node_id        AS VARCHAR) AS to_key
+          FROM tb_node_relation_history
+         WHERE application_id = #{applicationId}
+           AND analysis_time  = #{analysisTime}
+         ORDER BY relation_id
+    </select>
+
+</mapper>

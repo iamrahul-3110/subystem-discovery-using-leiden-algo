@@ -1,0 +1,67 @@
+{
+  "info": {
+    "name": "Subsystem Discovery Engine v2",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List Demo Examples",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8080/api/subsystems/examples"
+      }
+    },
+    {
+      "name": "Discover Hardcoded Analyzer History",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8080/api/subsystems/examples/analyzer-history/discover?runs=5&consensusThreshold=0.65&resolution=1.0&useLlmLabels=false"
+      }
+    },
+    {
+      "name": "Preview Leiden Input - Analyzer History",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8080/api/subsystems/examples/analyzer-history/leiden-input"
+      }
+    },
+    {
+      "name": "Discover Synthetic 100 Nodes",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8080/api/subsystems/generated/100/discover?runs=5&consensusThreshold=0.65&resolution=1.0&useLlmLabels=false"
+      }
+    },
+    {
+      "name": "Discover Synthetic 1000 Nodes",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8080/api/subsystems/generated/1000/discover?runs=3&consensusThreshold=0.65&resolution=1.0&useLlmLabels=false"
+      }
+    },
+    {
+      "name": "Discover Synthetic 10000 Nodes",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8080/api/subsystems/generated/10000/discover?runs=1&consensusThreshold=0.65&resolution=1.0&useLlmLabels=false"
+      }
+    },
+    {
+      "name": "Inline JSON Discovery",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "http://localhost:8080/api/subsystems/discover",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"applicationId\": 101,\n  \"applicationKey\": \"analyzer-demo\",\n  \"graphTypes\": [\"CODE_ASSOCIATION\", \"CALL_GRAPH\", \"HTTP_API\", \"CLASS_DIAGRAM\"],\n  \"runs\": 20,\n  \"consensusThreshold\": 0.7,\n  \"resolution\": 1.0,\n  \"useLlmLabels\": false,\n  \"graphs\": [\n    {\n      \"graphType\": \"CODE_ASSOCIATION\",\n      \"nodeDataArray\": [\n        {\"key\": \"0\", \"text\": \"com.sds.analyzer.server.analyzer\", \"group\": \"\", \"isGroup\": true, \"type\": \"PACKAGE\"},\n        {\"key\": \"1\", \"text\": \"agent.data\", \"group\": \"0\", \"isGroup\": true, \"type\": \"PACKAGE\"},\n        {\"key\": \"2\", \"text\": \"app\", \"group\": \"1\", \"isGroup\": true, \"type\": \"PACKAGE\"},\n        {\"key\": \"3\", \"text\": \"impl\", \"group\": \"2\", \"isGroup\": true, \"type\": \"PACKAGE\"},\n        {\"key\": \"4\", \"text\": \"NodeServiceImpl\", \"group\": \"3\", \"isGroup\": false, \"type\": \"CLASS\"},\n        {\"key\": \"5\", \"text\": \"NodeService\", \"group\": \"2\", \"isGroup\": false, \"type\": \"CLASS\"},\n        {\"key\": \"6\", \"text\": \"NodeMapper\", \"group\": \"1\", \"isGroup\": false, \"type\": \"CLASS\"},\n        {\"key\": \"7\", \"text\": \"analysishistory\", \"group\": \"0\", \"isGroup\": true, \"type\": \"PACKAGE\"},\n        {\"key\": \"8\", \"text\": \"AnalysisHistoryService\", \"group\": \"7\", \"isGroup\": false, \"type\": \"CLASS\"}\n      ],\n      \"linkDataArray\": [\n        {\"from\": \"5\", \"to\": \"4\"},\n        {\"from\": \"4\", \"to\": \"6\"},\n        {\"from\": \"8\", \"to\": \"5\"}\n      ]\n    },\n    {\n      \"graphType\": \"HTTP_API\",\n      \"nodeDataArray\": [\n        {\"packageName\": \"com.sds.analyzer.server.analyzer.agent.data.rest\", \"name\": \"NodeController\", \"type\": \"CLASS\", \"key\": \"group_0\", \"fields\": [{\"name\": \"deleteNodeHistory(java.lang.Long,java.util.List)\", \"type\": \"METHOD\", \"key\": \"1001\"}]},\n        {\"packageName\": \"com.sds.analyzer.server.analyzer.agent.data.app\", \"name\": \"NodeService\", \"type\": \"CLASS\", \"key\": \"group_1\", \"fields\": [{\"name\": \"deleteNodeHistory(java.lang.Long,java.util.List)\", \"type\": \"METHOD\", \"key\": \"1002\"}]},\n        {\"name\": \"\", \"type\": \"URI\", \"key\": \"group_2\", \"fields\": [{\"name\": \"api/analyzer/history/nodes:DELETE\", \"type\": \"URI\", \"key\": \"1003\"}]}\n      ],\n      \"linkDataArray\": [\n        {\"from\": \"group_2\", \"fromPort\": \"1003\", \"to\": \"group_0\", \"toPort\": \"1001\"},\n        {\"from\": \"group_0\", \"fromPort\": \"1001\", \"to\": \"group_1\", \"toPort\": \"1002\"}\n      ]\n    }\n  ]\n}\n"
+        }
+      }
+    }
+  ]
+}

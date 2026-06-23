@@ -1,0 +1,40 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /codeanalyzer/server
+
+spring:
+  datasource:
+    # Standalone demo DB. In Analyzer, replace with your PostgreSQL datasource.
+    url: jdbc:h2:mem:subsystem_discovery;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  sql:
+    init:
+      mode: always
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+
+subsystem:
+  llm:
+    enabled: true
+
+    openrouter-api-key: ${OPENROUTER_API_KEY:}
+
+    openrouter-url: https://openrouter.ai/api/v1/chat/completions
+
+    gemini-api-key: ${GEMINI_API_KEY:}
+
+    max-tokens: 4000
+
+    temperature: 0.7
+
+    connect-timeout-ms: 10000
+
+    read-timeout-ms: 180000

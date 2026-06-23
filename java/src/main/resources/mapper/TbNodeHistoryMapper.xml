@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.subsystemdiscovery.extraction.mapper.TbNodeHistoryMapper">
+
+    <resultMap id="NodeRowResultMap"
+               type="com.example.subsystemdiscovery.extraction.entity.NodeRow">
+        <constructor>
+            <idArg column="node_id" javaType="String"/>
+            <arg column="node_name" javaType="String"/>
+            <arg column="node_type" javaType="String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="ApplicationMetadataResultMap"
+               type="com.example.subsystemdiscovery.extraction.entity.ApplicationMetadata">
+        <constructor>
+            <arg column="application_id" javaType="Long"/>
+            <arg column="application_key" javaType="String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="NodeDetailRowResultMap"
+               type="com.example.subsystemdiscovery.extraction.entity.NodeDetailRow">
+        <constructor>
+            <idArg column="node_id" javaType="String"/>
+            <arg column="split_node_level" javaType="Integer"/>
+            <arg column="split_node_name" javaType="String"/>
+            <arg column="split_node_type" javaType="String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="NodeLinkRowResultMap"
+               type="com.example.subsystemdiscovery.extraction.entity.NodeLinkRow">
+        <constructor>
+            <arg column="from_key" javaType="String"/>
+            <arg column="to_key" javaType="String"/>
+        </constructor>
+    </resultMap>
+
+    <select id="selectApplicationMetadata"
+            resultMap="ApplicationMetadataResultMap">
+        SELECT am.application_id,
+               am.application_key
+          FROM tb_node_history_master nhm
+          JOIN tb_application_master am
+            ON nhm.application_id = am.application_id
+         WHERE nhm.analysis_time = CAST(#{analysisTime} AS TIMESTAMP)
+         ORDER BY nhm.created_at DESC
+         LIMIT 1
+    </select>
+
+    <select id="selectNodes"
+            resultMap="NodeRowResultMap">
+        SELECT CAST(node_id AS VARCHAR) AS node_id,
+               node_name,
+               node_type
+          FROM tb_node_history
+         WHERE application_id = #{applicationId}
+           AND analysis_time = CAST(#{analysisTime} AS TIMESTAMP)
+           AND use_yn = TRUE
+         ORDER BY node_id
+    </select>
+
+    <select id="selectNodeDetails"
+            resultMap="NodeDetailRowResultMap">
+        SELECT CAST(node_id AS VARCHAR) AS node_id,
+               split_node_level,
+               split_node_name,
+               split_node_type
+          FROM tb_node_detail_history
+         WHERE application_id = #{applicationId}
+           AND analysis_time = CAST(#{analysisTime} AS TIMESTAMP)
+         ORDER BY node_id, split_node_level
+    </select>
+
+    <select id="selectLinks"
+            resultMap="NodeLinkRowResultMap">
+        SELECT CAST(source_node_id AS VARCHAR) AS from_key,
+               CAST(target_node_id AS VARCHAR) AS to_key
+          FROM tb_node_relation_history
+         WHERE application_id = #{applicationId}
+           AND analysis_time = CAST(#{analysisTime} AS TIMESTAMP)
+         ORDER BY relation_id
+    </select>
+
+</mapper>

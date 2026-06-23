@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Subsystem Discovery</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --soft: #f8fafc;
+      --text: #172033;
+      --muted: #667085;
+      --line: #d9e2ec;
+      --blue: #2563eb;
+      --red: #d92d20;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    header {
+      padding: 16px 24px;
+      background: rgba(255, 255, 255, .94);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+    }
+
+    h1 { margin: 0; font-size: 22px; }
+
+    main {
+      display: grid;
+      grid-template-columns: 330px minmax(0, 1fr);
+      gap: 16px;
+      padding: 16px 24px 24px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 16px 42px rgba(30, 41, 59, .08);
+    }
+
+    aside {
+      padding: 16px;
+      height: fit-content;
+      position: sticky;
+      top: 88px;
+    }
+
+    label {
+      display: block;
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    input {
+      width: 100%;
+      height: 38px;
+      border: 1px solid #b8c7d9;
+      border-radius: 7px;
+      padding: 8px 10px;
+      color: var(--text);
+      background: #ffffff;
+    }
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+    }
+
+    .field { margin-bottom: 14px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .checkrow { display: flex; align-items: center; gap: 8px; margin: 6px 0 16px; font-size: 13px; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    button {
+      min-height: 38px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background: var(--blue);
+      color: #ffffff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #ffffff;
+      color: var(--text);
+      border-color: #b8c7d9;
+    }
+
+    button:disabled { opacity: .55; cursor: not-allowed; }
+
+    .status {
+      min-height: 34px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .status.error { color: var(--red); white-space: pre-wrap; }
+
+    .content { display: grid; gap: 16px; min-width: 0; }
+    .summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .metric { padding: 14px; min-height: 82px; }
+    .metric span { display: block; color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+    .metric strong { display: block; margin-top: 8px; font-size: 26px; line-height: 1; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h2 { margin: 0; font-size: 15px; }
+    .note { color: var(--muted); font-size: 12px; }
+
+    .mermaidBox {
+      min-height: 520px;
+      padding: 16px;
+      overflow: auto;
+      background: #fbfdff;
+    }
+
+    .mermaidBox svg {
+      width: 100%;
+      height: auto;
+      min-height: 420px;
+    }
+
+    .cards {
+      max-height: 520px;
+      overflow: auto;
+      padding: 12px 16px 16px;
+      display: grid;
+      gap: 9px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px 12px;
+      background: var(--surface);
+      cursor: pointer;
+    }
+
+    .card.active,
+    .card:hover {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+    }
+
+    .card strong { display: block; margin-bottom: 5px; font-size: 14px; }
+    .card p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .detail { padding: 14px 16px; }
+    .detail h3 { margin: 0 0 8px; font-size: 20px; }
+    .detail p, .detail li { color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .detail ul { padding-left: 18px; }
+
+    pre {
+      margin: 0;
+      padding: 14px 16px;
+      max-height: 320px;
+      overflow: auto;
+      background: #101828;
+      color: #dbeafe;
+      font-size: 12px;
+      line-height: 1.45;
+      border-radius: 0 0 8px 8px;
+    }
+
+    @media (max-width: 1120px) {
+      main, .layout { grid-template-columns: 1fr; }
+      aside { position: static; }
+      .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Subsystem Discovery</h1>
+</header>
+
+<main>
+  <aside class="panel">
+    <div class="field">
+      <label for="applicationId">Application ID</label>
+      <input id="applicationId" type="number" value="14" min="1" />
+    </div>
+    <div class="field">
+      <label for="applicationKey">Application Key</label>
+      <input id="applicationKey" type="text" value="analyzer-db" />
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label for="runs">Runs</label>
+        <input id="runs" type="number" min="1" max="100" value="5" />
+      </div>
+      <div class="field">
+        <label for="resolution">Resolution</label>
+        <input id="resolution" type="number" min="0.1" step="0.1" value="1.0" />
+      </div>
+    </div>
+    <div class="field">
+      <label for="threshold">Consensus Threshold</label>
+      <input id="threshold" type="number" min="0" max="1" step="0.05" value="0.65" />
+    </div>
+    <label class="checkrow">
+      <input id="useLlm" type="checkbox" />
+      <span>Use LLM labels</span>
+    </label>
+    <div class="actions">
+      <button id="runBtn" type="button">Run</button>
+      <button id="previewBtn" type="button" class="secondary">Preview</button>
+      <button id="jsonBtn" type="button" class="secondary" disabled>JSON</button>
+      <button id="mmdBtn" type="button" class="secondary" disabled>Mermaid</button>
+    </div>
+    <div id="status" class="status"></div>
+  </aside>
+
+  <section class="content">
+    <section id="summary" class="summary"></section>
+    <section class="layout">
+      <div class="panel">
+        <div class="header">
+          <h2>Mermaid ELK Diagram</h2>
+          <span id="diagramNote" class="note">No result</span>
+        </div>
+        <div id="diagram" class="mermaidBox">
+          <p class="note">Run discovery to render the Leiden subsystem graph.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="header">
+          <h2>Subsystems</h2>
+          <span id="listNote" class="note">0 total</span>
+        </div>
+        <div id="cards" class="cards"></div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="panel">
+        <div class="header"><h2>Selected Subsystem</h2></div>
+        <div id="detail" class="detail"><p>No subsystem selected.</p></div>
+      </div>
+      <div class="panel">
+        <div class="header">
+          <h2>Leiden Input Preview</h2>
+          <span id="previewNote" class="note">Not loaded</span>
+        </div>
+        <pre id="preview">{}</pre>
+      </div>
+    </section>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: 'loose',
+    theme: 'base',
+    flowchart: { defaultRenderer: 'elk', htmlLabels: true, curve: 'basis', nodeSpacing: 55, rankSpacing: 75 }
+  });
+
+  const fields = {
+    applicationId: document.getElementById('applicationId'),
+    applicationKey: document.getElementById('applicationKey'),
+    runs: document.getElementById('runs'),
+    resolution: document.getElementById('resolution'),
+    threshold: document.getElementById('threshold'),
+    useLlm: document.getElementById('useLlm')
+  };
+  const statusEl = document.getElementById('status');
+  const summaryEl = document.getElementById('summary');
+  const diagramEl = document.getElementById('diagram');
+  const diagramNote = document.getElementById('diagramNote');
+  const cardsEl = document.getElementById('cards');
+  const listNote = document.getElementById('listNote');
+  const detailEl = document.getElementById('detail');
+  const previewEl = document.getElementById('preview');
+  const previewNote = document.getElementById('previewNote');
+  const runBtn = document.getElementById('runBtn');
+  const previewBtn = document.getElementById('previewBtn');
+  const jsonBtn = document.getElementById('jsonBtn');
+  const mmdBtn = document.getElementById('mmdBtn');
+
+  let lastResult = null;
+  let lastMermaid = '';
+  let selectedSubsystemId = null;
+
+  renderSummary(null);
+
+  function requestBody() {
+    const applicationId = Number(fields.applicationId.value);
+    if (!Number.isFinite(applicationId) || applicationId < 1) {
+      throw new Error('Application ID must be a positive number.');
+    }
+    return {
+      applicationId,
+      applicationKey: fields.applicationKey.value || `application-${applicationId}`,
+      graphTypes: ['CALL_GRAPH'],
+      runs: Number(fields.runs.value || 1),
+      consensusThreshold: Number(fields.threshold.value || 0.65),
+      resolution: Number(fields.resolution.value || 1.0),
+      useLlmLabels: fields.useLlm.checked,
+      graphs: null
+    };
+  }
+
+  async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+    const text = await response.text();
+    const body = text ? JSON.parse(text) : null;
+    if (!response.ok) {
+      throw new Error(body && body.message ? body.message : response.statusText);
+    }
+    return body;
+  }
+
+  async function runDiscovery() {
+    setBusy(true);
+    setStatus('Running Leiden subsystem discovery.');
+    try {
+      const body = requestBody();
+      lastResult = await fetchJson(`/api/analysis/${body.applicationId}/subsystems/discover`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      selectedSubsystemId = lastResult.subsystems && lastResult.subsystems.length ? lastResult.subsystems[0].id : null;
+      renderResult(lastResult);
+      jsonBtn.disabled = false;
+      mmdBtn.disabled = false;
+      setStatus(`Done: ${fmt(lastResult.summary.subsystemCount)} subsystems from ${fmt(lastResult.summary.totalNodes)} weighted nodes.`);
+    } catch (error) {
+      setStatus(error.message, true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function previewInput() {
+    setBusy(true);
+    setStatus('Building Leiden input preview.');
+    try {
+      const body = requestBody();
+      const input = await fetchJson(`/api/analysis/${body.applicationId}/subsystems/leiden-input`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      previewEl.textContent = JSON.stringify({
+        nodeCount: input.nodeCount,
+        edgeCount: input.edgeCount,
+        nodes: input.nodes.slice(0, 30),
+        edges: input.edges.slice(0, 30),
+        truncated: input.nodes.length > 30 || input.edges.length > 30
+      }, null, 2);
+      previewNote.textContent = `${fmt(input.nodeCount)} nodes / ${fmt(input.edgeCount)} edges`;
+      setStatus('Preview ready.');
+    } catch (error) {
+      setStatus(error.message, true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function renderResult(result) {
+    renderSummary(result);
+    renderCards(result.subsystems || []);
+    const selected = (result.subsystems || []).find(item => item.id === selectedSubsystemId);
+    renderDetail(selected || (result.subsystems || [])[0], result);
+    renderMermaid(result);
+  }
+
+  function renderSummary(result) {
+    const summary = result ? result.summary : {};
+    summaryEl.innerHTML = [
+      ['Weighted nodes', summary.totalNodes],
+      ['Weighted edges', summary.totalEdges],
+      ['Subsystems', summary.subsystemCount],
+      ['Avg stability', summary.averageStability]
+    ].map(([label, value]) => `<div class="panel metric"><span>${label}</span><strong>${value == null ? '-' : fmt(value)}</strong></div>`).join('');
+  }
+
+  async function renderMermaid(result) {
+    lastMermaid = buildMermaid(result);
+    diagramEl.innerHTML = '<p class="note">Rendering Mermaid ELK diagram...</p>';
+    try {
+      const rendered = await mermaid.render(`subsystems-${Date.now()}`, lastMermaid);
+      diagramEl.innerHTML = rendered.svg;
+      diagramNote.textContent = `${fmt((result.subsystems || []).length)} nodes / ${fmt((result.subsystemLinks || []).length)} links`;
+    } catch (error) {
+      diagramEl.innerHTML = `<p class="note">Mermaid render failed. Download the Mermaid source to inspect it.</p>`;
+      diagramNote.textContent = 'Render failed';
+    }
+  }
+
+  function buildMermaid(result) {
+    const subsystems = (result.subsystems || []).slice(0, 80);
+    const allowed = new Set(subsystems.map(item => item.id));
+    const links = (result.subsystemLinks || [])
+      .filter(link => allowed.has(link.source) && allowed.has(link.target))
+      .sort((a, b) => (b.weight || 0) - (a.weight || 0))
+      .slice(0, 140);
+    const ids = new Map(subsystems.map((item, index) => [item.id, `S${index + 1}`]));
+    const lines = [
+      '%% Generated from Leiden subsystem discovery output',
+      '%%{init: {"theme": "base", "flowchart": {"defaultRenderer": "elk", "htmlLabels": true, "curve": "basis"}}}%%',
+      'flowchart LR'
+    ];
+
+    subsystems.forEach((item, index) => {
+      const label = `<b>${mm(item.name || item.id)}</b><br/>${fmt(item.nodeCount)} nodes<br/>stability ${mm(item.stabilityScore)}`;
+      lines.push(`  ${ids.get(item.id)}["${label}"]`);
+      lines.push(`  class ${ids.get(item.id)} c${index % 6}`);
+    });
+    links.forEach(link => {
+      lines.push(`  ${ids.get(link.source)} -->|"${mm(`${link.couplingStrength || 'LINK'} / ${fmt(link.weight)}`)}"| ${ids.get(link.target)}`);
+    });
+    ['#dbeafe,#2563eb', '#dcfce7,#0f9f6e', '#fef3c7,#b7791f', '#fce7f3,#db2777', '#ede9fe,#7c3aed', '#ccfbf1,#0f766e']
+      .forEach((pair, index) => {
+        const [fill, stroke] = pair.split(',');
+        lines.push(`  classDef c${index} fill:${fill},stroke:${stroke},stroke-width:1px,color:#172033`);
+      });
+    return lines.join('\n');
+  }
+
+  function renderCards(subsystems) {
+    listNote.textContent = `${fmt(subsystems.length)} total`;
+    cardsEl.innerHTML = subsystems.map(item => `
+      <article class="card${item.id === selectedSubsystemId ? ' active' : ''}" data-id="${esc(item.id)}">
+        <strong>${esc(item.name || item.id)}</strong>
+        <p>${esc(item.description || '')}</p>
+        <p>${fmt(item.nodeCount)} nodes | stability ${item.stabilityScore}</p>
+      </article>
+    `).join('');
+    [...cardsEl.querySelectorAll('.card')].forEach(card => {
+      card.addEventListener('click', () => {
+        selectedSubsystemId = card.dataset.id;
+        renderResult(lastResult);
+      });
+    });
+  }
+
+  function renderDetail(subsystem, result) {
+    if (!subsystem) {
+      detailEl.innerHTML = '<p>No subsystem selected.</p>';
+      return;
+    }
+    const connected = (result.subsystemLinks || [])
+      .filter(link => link.source === subsystem.id || link.target === subsystem.id)
+      .slice(0, 8);
+    detailEl.innerHTML = `
+      <h3>${esc(subsystem.name || subsystem.id)}</h3>
+      <p>${esc(subsystem.description || '')}</p>
+      <ul>
+        <li>${fmt(subsystem.nodeCount)} nodes</li>
+        <li>${fmt(subsystem.edgeCount)} internal edges</li>
+        <li>Stability ${subsystem.stabilityScore}</li>
+      </ul>
+      <h3>Central nodes</h3>
+      ${list((subsystem.centralNodes || []).map(node => `${node.name} (${node.type}, ${node.score})`))}
+      <h3>Top packages</h3>
+      ${list(subsystem.topPackages || [])}
+      <h3>Coupled subsystems</h3>
+      ${list(connected.map(link => `${link.source === subsystem.id ? link.target : link.source} - ${link.couplingStrength} (${link.weight})`))}
+    `;
+  }
+
+  function list(items) {
+    return items.length ? `<ul>${items.map(item => `<li>${esc(item)}</li>`).join('')}</ul>` : '<p>None</p>';
+  }
+
+  function downloadJson() {
+    if (!lastResult) return;
+    download(new Blob([JSON.stringify(lastResult, null, 2)], { type: 'application/json' }), `application-${fields.applicationId.value}-subsystems.json`);
+  }
+
+  function downloadMermaid() {
+    if (!lastMermaid) return;
+    download(new Blob([lastMermaid], { type: 'text/plain;charset=utf-8' }), `application-${fields.applicationId.value}-subsystems.mmd`);
+  }
+
+  function download(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function setBusy(value) {
+    runBtn.disabled = value;
+    previewBtn.disabled = value;
+  }
+
+  function setStatus(text, error = false) {
+    statusEl.textContent = text || '';
+    statusEl.className = error ? 'status error' : 'status';
+  }
+
+  function fmt(value) {
+    if (value == null || value === '') return '-';
+    return Number(value).toLocaleString();
+  }
+
+  function esc(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function mm(value) {
+    return esc(value).replaceAll('|', '/').replaceAll('[', '(').replaceAll(']', ')').replaceAll('{', '(').replaceAll('}', ')');
+  }
+
+  runBtn.addEventListener('click', runDiscovery);
+  previewBtn.addEventListener('click', previewInput);
+  jsonBtn.addEventListener('click', downloadJson);
+  mmdBtn.addEventListener('click', downloadMermaid);
+</script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+{
+  "info": {
+    "_postman_id": "subsystem-discovery-v4",
+    "name": "Subsystem Discovery Engine v4 (History + LLM)",
+    "description": "Complete API collection for the Subsystem Discovery Engine.\n\nBase URL  : http://localhost:8081/codeanalyzer/server\nContext path set via server.servlet.context-path in application.yml.\n\nAll 4 APIs read from the HISTORY tables:\n  tb_node_history, tb_node_detail_history, tb_node_relation_history\n\nThe three snapshot identifiers are passed as URL query parameters:\n  applicationId  – numeric ID (tb_node_history.application_id)\n  applicationKey – human-readable label\n  analysisTime   – snapshot key (tb_node_history.analysis_time)\n\nThe request body contains only algorithm-tuning knobs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8081/codeanalyzer/server",
+      "type": "string",
+      "description": "Base URL including context path."
+    },
+    {
+      "key": "application_id",
+      "value": "14",
+      "type": "string",
+      "description": "Numeric application ID stored in tb_node_history.application_id."
+    },
+    {
+      "key": "application_key",
+      "value": "my-app",
+      "type": "string",
+      "description": "Human-readable label for the application."
+    },
+    {
+      "key": "analysis_time",
+      "value": "20240101120000",
+      "type": "string",
+      "description": "Analysis snapshot key stored in tb_node_history.analysis_time. Must match exactly."
+    }
+  ],
+  "item": [
+    {
+      "name": "API 1 – Get Leiden Input (History Tables)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/codeanalyzer/subsystem/leiden-input?applicationId={{application_id}}&applicationKey={{application_key}}&analysisTime={{analysis_time}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "codeanalyzer", "subsystem", "leiden-input"],
+          "query": [
+            { "key": "applicationId",  "value": "{{application_id}}" },
+            { "key": "applicationKey", "value": "{{application_key}}" },
+            { "key": "analysisTime",   "value": "{{analysis_time}}" }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"graphTypes\": [\"CALL_GRAPH\"],\n  \"runs\": 5,\n  \"consensusThreshold\": 0.65,\n  \"resolution\": 1.0,\n  \"useLlmLabels\": false,\n  \"graphs\": null\n}"
+        },
+        "description": "Loads the history-table snapshot for the given (applicationId, analysisTime) and returns the normalised weighted graph WITHOUT running the Leiden algorithm.\n\nURL Query Params:\n  applicationId  – must match tb_node_history.application_id\n  applicationKey – human-readable label\n  analysisTime   – must match tb_node_history.analysis_time exactly\n\nBody (algorithm tuning only – runs/threshold ignored for this endpoint):\n  graphTypes         – which dimensions to include (default: [\"CALL_GRAPH\"])\n  graphs             – must be null for DB-backed mode\n\nUse this to:\n  • Verify the snapshot has the expected number of nodes/edges\n  • Inspect the weighted graph before running the full algorithm\n\nReturns: LeidenInputDto { nodeCount, edgeCount, nodes[], edges[] }"
+      },
+      "response": []
+    },
+    {
+      "name": "API 2 – Discover Subsystems (Leiden, History Tables)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/codeanalyzer/subsystem/discover?applicationId={{application_id}}&applicationKey={{application_key}}&analysisTime={{analysis_time}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "codeanalyzer", "subsystem", "discover"],
+          "query": [
+            { "key": "applicationId",  "value": "{{application_id}}" },
+            { "key": "applicationKey", "value": "{{application_key}}" },
+            { "key": "analysisTime",   "value": "{{analysis_time}}" }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"graphTypes\": [\"CALL_GRAPH\"],\n  \"runs\": 10,\n  \"consensusThreshold\": 0.65,\n  \"resolution\": 1.0,\n  \"useLlmLabels\": false,\n  \"graphs\": null\n}"
+        },
+        "description": "Runs the full Leiden community-detection pipeline on the history snapshot.\n\nURL Query Params:\n  applicationId  – must match tb_node_history.application_id\n  applicationKey – human-readable label\n  analysisTime   – must match tb_node_history.analysis_time exactly\n\nBody (algorithm tuning):\n  graphTypes         – [\"CALL_GRAPH\"] | [\"CODE_ASSOCIATION\"] | all 4 types\n  runs               – number of Leiden iterations (higher = more stable, slower; default: 20)\n  consensusThreshold – co-clustering fraction threshold (0–1; default: 0.70)\n  resolution         – higher = more/smaller clusters (default: 1.0)\n  useLlmLabels       – when true, per-subsystem names are generated by the LLM\n  graphs             – must be null for DB-backed mode\n\nReturns: SubsystemDiscoveryResponse"
+      },
+      "response": []
+    },
+    {
+      "name": "API 3 – Discover Subsystems with LLM (History Tables)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/codeanalyzer/subsystem/discover-llm?applicationId={{application_id}}&applicationKey={{application_key}}&analysisTime={{analysis_time}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "codeanalyzer", "subsystem", "discover-llm"],
+          "query": [
+            { "key": "applicationId",  "value": "{{application_id}}" },
+            { "key": "applicationKey", "value": "{{application_key}}" },
+            { "key": "analysisTime",   "value": "{{analysis_time}}" }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"graphTypes\": [\"CALL_GRAPH\"],\n  \"runs\": 10,\n  \"consensusThreshold\": 0.65,\n  \"resolution\": 1.0,\n  \"useLlmLabels\": false,\n  \"graphs\": null\n}"
+        },
+        "description": "Runs the full Leiden pipeline on the history snapshot, then sends ALL discovered subsystems in a single batch prompt to the custom LLM chat-completions API for architectural enrichment.\n\nURL Query Params:\n  applicationId  – must match tb_node_history.application_id\n  applicationKey – included in the LLM prompt as application context\n  analysisTime   – must match tb_node_history.analysis_time exactly\n\nBody (algorithm tuning — same as API 2):\n  graphs must be null\n\nLLM call format:\n  POST {llm.base-url}/chat/completions\n  Headers:\n    Authorization:   Bearer {api-key}\n    X-Service-Id:    {service-id}\n    user_identifier: {user-identifier}\n    model:           {model-id}\n\nLLM enrichment adds:\n  llmArchitecturalSummary  – overall architecture description (≤60 words)\n  llmInsights[]:\n    subsystemId          – cluster ID\n    suggestedName        – business-oriented name from LLM\n    businessDescription  – what the subsystem does (≤40 words)\n    technicalNotes       – coupling risks / improvement areas (≤30 words)\n    confidence           – LLM certainty score 0.0–1.0\n\nRequires: subsystem.llm.enabled=true in application.yml\nFalls back to heuristic labels when LLM is unavailable.\n\nReturns: LlmDiscoveryResponse"
+      },
+      "response": []
+    },
+    {
+      "name": "API 4 – Transform Inline JSON → Leiden Input (No DB)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/codeanalyzer/subsystem/transform/leiden-input",
+          "host": ["{{base_url}}"],
+          "path": ["api", "codeanalyzer", "subsystem", "transform", "leiden-input"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"graphTypes\": [\"CODE_ASSOCIATION\", \"CALL_GRAPH\"],\n  \"runs\": 5,\n  \"consensusThreshold\": 0.65,\n  \"resolution\": 1.0,\n  \"useLlmLabels\": false,\n  \"graphs\": [\n    {\n      \"graphType\": \"CODE_ASSOCIATION\",\n      \"nodeDataArray\": [\n        {\"key\": \"0\", \"text\": \"com.example.analyzer\", \"group\": \"\", \"isGroup\": true, \"type\": \"PACKAGE\"},\n        {\"key\": \"1\", \"text\": \"auth\", \"group\": \"0\", \"isGroup\": true, \"type\": \"PACKAGE\"},\n        {\"key\": \"2\", \"text\": \"AuthController\", \"group\": \"1\", \"isGroup\": false, \"type\": \"CLASS\"},\n        {\"key\": \"3\", \"text\": \"AuthService\", \"group\": \"1\", \"isGroup\": false, \"type\": \"CLASS\"},\n        {\"key\": \"4\", \"text\": \"order\", \"group\": \"0\", \"isGroup\": true, \"type\": \"PACKAGE\"},\n        {\"key\": \"5\", \"text\": \"OrderService\", \"group\": \"4\", \"isGroup\": false, \"type\": \"CLASS\"},\n        {\"key\": \"6\", \"text\": \"OrderMapper\", \"group\": \"4\", \"isGroup\": false, \"type\": \"CLASS\"}\n      ],\n      \"linkDataArray\": [\n        {\"from\": \"2\", \"to\": \"3\"},\n        {\"from\": \"3\", \"to\": \"5\"},\n        {\"from\": \"5\", \"to\": \"6\"}\n      ]\n    }\n  ]\n}"
+        },
+        "description": "Accepts an inline graph payload in the body (graphs[]) and returns the normalised LeidenInputDto WITHOUT hitting the database and WITHOUT running the Leiden algorithm.\n\nNo URL query params required when graphs is non-null.\n\nOptional fallback: if graphs is null, the three query params are used to load from history tables (same as API 1):\n  ?applicationId=14&applicationKey=my-app&analysisTime=20240101120000\n\nUse this to:\n  • Debug the graph normalisation step without a database\n  • Test custom graph payloads\n  • Pre-validate inline data before using the full discover endpoint\n\nReturns: LeidenInputDto { nodeCount, edgeCount, nodes[], edges[] }"
+      },
+      "response": []
+    }
+  ]
+}

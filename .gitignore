@@ -1,0 +1,23 @@
+# Maven build directory
+**/target/
+**/target-eclipse/
+
+# Node modules and production build outputs
+**/node_modules/
+**/dist/
+**/dist-ssr/
+
+# IDE and Editor directories
+.idea/
+.vscode/
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs and temp files
+*.log
+temp/
+tmp/
