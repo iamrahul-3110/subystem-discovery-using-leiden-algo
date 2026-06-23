@@ -271,11 +271,11 @@ These classes live in the `config/` package. They manage application settings.
 | Property | What It Does |
 |---|---|
 | `enabled` | Toggle — `true` means LLM calls are active, `false` means use heuristic labels |
-| `base-url` | The LLM API base URL (e.g. `https://aipro.sdsdev.co.kr/general/api/v1`) |
+| `base-url` | The LLM API base URL (e.g. `https://dummy.ai.com/general/api/v1`) |
 | `api-key` | Bearer token for the `Authorization` header |
-| `service-id` | Value for the `X-Service-Id` header |
+| `service-id` | Value for the `Service-Id` header |
 | `user-identifier` | Value for the `user_identifier` header (email) |
-| `model-id` | Value for the `model` header (e.g. `"42"`) |
+| `model-id` | Value for the `model` header (e.g. `"gpt/deepseek"`) |
 | `max-tokens` | Max tokens the LLM may generate (default: 24576) |
 | `temperature` | Controls creativity vs determinism (1.0 = creative) |
 | `top-k` | Sampling parameter (0 = disabled) |
