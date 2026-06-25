@@ -42,15 +42,14 @@ button:disabled {
 }
 
 .workbench-shell {
-  width: min(1500px, calc(100vw - 32px));
-  margin: 16px auto;
+  width: 100%;
+  margin: 0;
 }
 
 .app-header {
   background: #ffffff;
-  border: 1px solid #b8c0cc;
-  border-radius: 8px 8px 0 0;
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.14);
+  border-bottom: 1px solid #b8c0cc;
+  border-radius: 0;
   overflow: hidden;
 }
 
@@ -136,11 +135,8 @@ h2 {
 
 .layout-grid {
   display: flex;
-  min-height: calc(100vh - 160px);
-  border: 1px solid #aeb6c2;
-  border-top: none;
+  min-height: calc(100vh - 110px);
   background: #ffffff;
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.14);
 }
 
 .side-rail {
@@ -203,6 +199,19 @@ h2 {
   border-color: #b6c5d8;
   background: #ffffff;
   color: #0f172a;
+}
+
+.sidebar-feature-heading {
+  width: 100%;
+  border: 1px solid #b6c5d8;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 700;
+  cursor: default;
+  user-select: none;
 }
 
 .config-block {
@@ -433,7 +442,7 @@ h2 {
 .discovery-grid {
   display: flex;
   gap: 0;
-  min-height: 540px;
+  height: 640px;
 }
 
 .tree-panel,
@@ -589,6 +598,7 @@ h2 {
 .diagram-panel {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .mermaid-stage {
@@ -638,18 +648,19 @@ h2 {
 }
 
 .mermaid-controls button {
-  width: 28px;
+  min-width: 28px;
+  width: auto;
   height: 28px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   background: #ffffff;
   color: #0f172a;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 0 8px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -731,10 +742,14 @@ h2 {
 
 .full-width-summary {
   width: 100%;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
 }
 
 .full-width-summary .summary-body {
-  min-height: 260px;
+  flex: 1 1 0%;
+  overflow-y: auto;
   padding: 18px 20px;
   color: #334155;
   line-height: 1.7;
@@ -767,10 +782,16 @@ h2 {
 
   .discovery-grid {
     flex-direction: column;
+    height: auto;
   }
 
   .tree-panel {
     width: 100% !important;
+    height: 400px;
+  }
+
+  .diagram-panel {
+    height: 500px;
   }
 
   .panel-resizer {
@@ -1136,7 +1157,7 @@ h2 {
   opacity: 0;
   transition: opacity 0.2s, transform 0.2s;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
-  pointer-events: none;
+  pointer-events: auto;
   text-transform: none;
   white-space: normal;
   letter-spacing: normal;
@@ -1205,7 +1226,7 @@ h2 {
     opacity .18s ease,
     transform .18s ease;
 
-  pointer-events: none;
+  pointer-events: auto;
   z-index: 99999;
 
   text-transform: none;
@@ -1314,6 +1335,25 @@ h2 {
   transform: translateY(4px);
 }
 
+/* Tooltip hover bridge to prevent premature closing when cursor is on the gap */
+.tooltip-box::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 15px;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.tooltip-align-left-down .tooltip-box::before,
+.tooltip-align-right-down .tooltip-box::before {
+  top: auto;
+  bottom: 100%;
+}
+
+
 @media (max-width: 1200px) {
 
   .tooltip-box {
@@ -1409,3 +1449,821 @@ h2 {
 .summary-container tr:nth-child(even) {
   background-color: #fcfdfe;
 }
+
+/* Mermaid Info container and trigger */
+.mermaid-info-container {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 20;
+}
+
+/* Info Popup */
+.mermaid-info-popup {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  width: 320px;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 16px;
+  color: #f8fafc;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  z-index: 30;
+  cursor: default;
+}
+
+/* Arrow */
+.mermaid-info-popup .popup-arrow {
+  position: absolute;
+  top: -6px;
+  left: 10px;
+  width: 12px;
+  height: 12px;
+  background: #0f172a;
+  border-left: 1px solid #1e293b;
+  border-top: 1px solid #1e293b;
+  transform: rotate(45deg);
+}
+
+.mermaid-info-popup h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 6px;
+  color: #ffffff;
+}
+
+.legend-section {
+  margin-bottom: 12px;
+}
+
+.legend-section:last-child {
+  margin-bottom: 0;
+}
+
+.legend-section h5 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+.legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #cbd5e1;
+  text-align: left;
+}
+
+.legend-item strong {
+  color: #ffffff;
+}
+
+.legend-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Line indicators */
+.line-indicator {
+  display: inline-block;
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.line-indicator.high {
+  background: #dc2626;
+}
+
+.line-indicator.medium {
+  background: #2563eb;
+}
+
+.line-indicator.low {
+  background: #94a3b8;
+}
+
+/* Node indicators */
+.node-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.node-indicator.root-node {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+
+.node-indicator.api-node {
+  background: #e2fcf1;
+  border-color: #0f9f58;
+}
+
+.node-indicator.service-node {
+  background: #f3e8ff;
+  border-color: #9333ea;
+}
+
+.node-indicator.repo-node {
+  background: #ffedd5;
+  border-color: #ea580c;
+}
+
+.node-indicator.class-node {
+  background: #f1f5f9;
+  border-color: #475569;
+}
+
+/* Fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Collapsible Panels */
+.discovery-grid {
+  transition: height 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  overflow: hidden;
+}
+
+.discovery-grid.collapsed {
+  height: 0 !important;
+  border-top-width: 0 !important;
+  border-bottom-width: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.discovery-grid.summary-collapsed {
+  height: 980px;
+}
+
+.full-width-summary {
+  transition: height 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  overflow: hidden;
+}
+
+.full-width-summary.collapsed {
+  height: 52px !important;
+}
+
+.full-width-summary.discovery-collapsed {
+  height: 980px;
+}
+
+.workspace-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  margin-top: 16px;
+}
+
+.collapse-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.collapse-toggle-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.collapse-toggle-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.collapse-toggle-btn.text-btn {
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  color: #2563eb;
+}
+
+.collapse-toggle-btn.text-btn:hover {
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  background: #f8fafc;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.theme-toggle-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+/* ==========================================
+   Dark Mode Theme Overrides
+   ========================================== */
+body.dark {
+  background: #0b0f19;
+  color: #f1f5f9;
+}
+
+body.dark .app-header {
+  background: #111827;
+  border-color: #1e293b;
+}
+
+body.dark .app-bar {
+  background: #111827;
+}
+
+body.dark h1 {
+  color: #f8fafc;
+}
+
+body.dark h2 {
+  color: #e2e8f0;
+}
+
+body.dark label {
+  color: #94a3b8;
+}
+
+body.dark .snapshot-chip {
+  background: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+body.dark .snapshot-chip strong {
+  color: #f8fafc;
+}
+
+body.dark .layout-grid {
+  background: #111827;
+  border-color: #1e293b;
+}
+
+body.dark .side-rail {
+  background: #0f172a;
+  border-right-color: #1e293b;
+}
+
+body.dark .nav-item {
+  color: #94a3b8;
+}
+
+body.dark .nav-item.active,
+body.dark .nav-item:hover {
+  background: #1e293b;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+body.dark .sidebar-feature-heading {
+  background: #1e293b;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+body.dark .config-block {
+  border-bottom-color: #1e293b;
+}
+
+body.dark .config-block label {
+  color: #cbd5e1;
+}
+
+body.dark .config-block input,
+body.dark .config-block select {
+  background: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+body.dark .config-block input:focus,
+body.dark .config-block select:focus {
+  border-color: #3b82f6;
+  outline: 2px solid rgba(59, 130, 246, 0.25);
+}
+
+body.dark .tree-panel,
+body.dark .diagram-panel,
+body.dark .detail-panel,
+body.dark .summary-panel {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+body.dark .panel-heading {
+  background: #1e293b;
+  border-bottom-color: #1e293b;
+}
+
+body.dark .cluster-card {
+  background: #111827;
+  border-color: #1e293b;
+}
+
+body.dark .toggle-mark {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+body.dark .cluster-main strong {
+  color: #f8fafc;
+}
+
+body.dark .cluster-detail {
+  background: #111827;
+  border-top-color: #1e293b;
+}
+
+body.dark .cluster-detail ul li {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+body.dark .cluster-detail ul li span {
+  color: #cbd5e1;
+}
+
+body.dark .cluster-detail ul li small {
+  color: #64748b;
+}
+
+body.dark .metrics-grid article {
+  background: #111827;
+  border-color: #1e293b;
+}
+
+body.dark .metrics-grid article p {
+  color: #94a3b8;
+}
+
+body.dark .metrics-grid article strong {
+  color: #f8fafc;
+}
+
+body.dark .statusBar {
+  background: #111827;
+  border-color: #1e293b;
+  color: #cbd5e1;
+}
+
+body.dark .status-indicator {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+body.dark .workspace-section-header {
+  background: #111827;
+  border-color: #1e293b;
+}
+
+body.dark .collapse-toggle-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+body.dark .collapse-toggle-btn:hover {
+  background: #334155;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
+body.dark .collapse-toggle-btn.text-btn {
+  background: transparent;
+  border: none;
+  color: #3b82f6;
+}
+
+body.dark .collapse-toggle-btn.text-btn:hover {
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.08);
+}
+
+body.dark .theme-toggle-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+body.dark .theme-toggle-btn:hover {
+  background: #334155;
+  border-color: #475569;
+  color: #3b82f6;
+}
+
+body.dark .mermaid-stage {
+  background:
+    linear-gradient(90deg, rgba(30, 41, 59, 0.4) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(30, 41, 59, 0.4) 1px, transparent 1px),
+    #090d16;
+  background-size: 32px 32px;
+}
+
+body.dark .mermaid-controls {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: #334155;
+}
+
+body.dark .mermaid-controls button {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+body.dark .mermaid-controls button:hover {
+  background: #334155;
+  border-color: #475569;
+  color: #3b82f6;
+}
+
+body.dark .mermaid-controls .zoom-level {
+  color: #cbd5e1;
+}
+
+body.dark .selected-cluster-sidebar-card {
+  background: #111827;
+  border-top-color: #1e293b;
+}
+
+body.dark .selected-cluster-sidebar-card h3 {
+  color: #f8fafc;
+}
+
+body.dark .full-width-summary .summary-body {
+  background: linear-gradient(135deg, #111827, #0f172a);
+}
+
+body.dark .summary-container {
+  color: #cbd5e1;
+}
+
+body.dark .summary-container h1,
+body.dark .summary-container h2,
+body.dark .summary-container h3 {
+  color: #f8fafc;
+}
+
+body.dark .summary-container h1 {
+  border-bottom-color: #1e293b;
+}
+
+body.dark .summary-container th {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+body.dark .summary-container td {
+  border-color: #334155;
+}
+
+body.dark .summary-container tr:nth-child(even) {
+  background-color: #111827;
+}
+
+body.dark ::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+body.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+body.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+body.dark .cluster-list {
+  scrollbar-color: #334155 #0f172a;
+}
+
+body.dark .main-panel {
+  background: #0b0f19;
+}
+
+body.dark .command-row {
+  border-bottom-color: #1e293b;
+}
+
+body.dark .empty-panel {
+  border-color: #1e293b;
+  background:
+    linear-gradient(90deg, rgba(30, 41, 59, 0.4) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(30, 41, 59, 0.4) 1px, transparent 1px),
+    #090d16;
+  background-size: 36px 36px;
+}
+
+body.dark .empty-card {
+  border-color: #1e293b;
+  background: #0f172a;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+}
+
+body.dark .empty-card h2 {
+  color: #f8fafc;
+}
+
+body.dark .empty-card p:last-child {
+  color: #cbd5e1;
+}
+
+/* Tooltip Dark Mode overrides */
+body.dark .tooltip-box {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #475569 !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark .tooltip-box::after {
+  border-color: #1e293b transparent transparent transparent !important;
+}
+
+body.dark .tooltip-align-left-down .tooltip-box::after,
+body.dark .tooltip-align-right-down .tooltip-box::after {
+  border-color: transparent transparent #1e293b transparent !important;
+}
+
+/* Dark mode for Graph Legend Popup */
+body.dark .mermaid-info-popup {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+}
+
+body.dark .mermaid-info-popup .popup-arrow {
+  background: #1e293b !important;
+  border-left-color: #475569 !important;
+  border-top-color: #475569 !important;
+}
+
+body.dark .mermaid-info-popup h4 {
+  border-bottom-color: #334155 !important;
+}
+
+body.dark .legend-section h5 {
+  color: #94a3b8 !important;
+}
+
+body.dark .legend-item {
+  color: #cbd5e1 !important;
+}
+
+/* Mermaid SVG Dark Theme Overrides */
+body.dark .mermaid-stage svg {
+  color: #f8fafc !important;
+}
+
+body.dark .mermaid-stage .node rect,
+body.dark .mermaid-stage .node polygon,
+body.dark .mermaid-stage .node circle,
+body.dark .mermaid-stage .node path {
+  fill: #1e293b !important;
+  stroke: #475569 !important;
+}
+
+body.dark .mermaid-stage .node .label,
+body.dark .mermaid-stage .node div {
+  color: #f8fafc !important;
+}
+
+/* Cluster roots (subsystems) */
+body.dark .mermaid-stage .clusterRoot rect,
+body.dark .mermaid-stage .clusterRoot polygon,
+body.dark .mermaid-stage .clusterRoot circle,
+body.dark .mermaid-stage .clusterRoot path {
+  fill: #1e3a8a !important;
+  stroke: #3b82f6 !important;
+}
+
+body.dark .mermaid-stage .clusterRoot .label,
+body.dark .mermaid-stage .clusterRoot div {
+  color: #eff6ff !important;
+}
+
+/* Expanded generic nodes */
+body.dark .mermaid-stage .expandedNode rect,
+body.dark .mermaid-stage .expandedNode polygon,
+body.dark .mermaid-stage .expandedNode circle,
+body.dark .mermaid-stage .expandedNode path {
+  fill: #1e293b !important;
+  stroke: #475569 !important;
+}
+
+body.dark .mermaid-stage .expandedNode .label,
+body.dark .mermaid-stage .expandedNode div {
+  color: #f8fafc !important;
+}
+
+/* API Nodes (Green theme) */
+body.dark .mermaid-stage .apiNode rect,
+body.dark .mermaid-stage .apiNode polygon,
+body.dark .mermaid-stage .apiNode circle,
+body.dark .mermaid-stage .apiNode path {
+  fill: #064e3b !important;
+  stroke: #10b981 !important;
+}
+body.dark .mermaid-stage .apiNode .label,
+body.dark .mermaid-stage .apiNode div {
+  color: #a7f3d0 !important;
+}
+
+/* Controller Nodes (Blue theme) */
+body.dark .mermaid-stage .controllerNode rect,
+body.dark .mermaid-stage .controllerNode polygon,
+body.dark .mermaid-stage .controllerNode circle,
+body.dark .mermaid-stage .controllerNode path {
+  fill: #1e3a8a !important;
+  stroke: #3b82f6 !important;
+}
+body.dark .mermaid-stage .controllerNode .label,
+body.dark .mermaid-stage .controllerNode div {
+  color: #bfdbfe !important;
+}
+
+/* Service Nodes (Purple theme) */
+body.dark .mermaid-stage .serviceNode rect,
+body.dark .mermaid-stage .serviceNode polygon,
+body.dark .mermaid-stage .serviceNode circle,
+body.dark .mermaid-stage .serviceNode path {
+  fill: #581c87 !important;
+  stroke: #a855f7 !important;
+}
+body.dark .mermaid-stage .serviceNode .label,
+body.dark .mermaid-stage .serviceNode div {
+  color: #f3e8ff !important;
+}
+
+/* Repository Nodes (Orange/Brown theme) */
+body.dark .mermaid-stage .repoNode rect,
+body.dark .mermaid-stage .repoNode polygon,
+body.dark .mermaid-stage .repoNode circle,
+body.dark .mermaid-stage .repoNode path {
+  fill: #7c2d12 !important;
+  stroke: #f97316 !important;
+}
+body.dark .mermaid-stage .repoNode .label,
+body.dark .mermaid-stage .repoNode div {
+  color: #ffedd5 !important;
+}
+
+/* Method Nodes (Grey theme) */
+body.dark .mermaid-stage .methodNode rect,
+body.dark .mermaid-stage .methodNode polygon,
+body.dark .mermaid-stage .methodNode circle,
+body.dark .mermaid-stage .methodNode path {
+  fill: #111827 !important;
+  stroke: #374151 !important;
+}
+body.dark .mermaid-stage .methodNode .label,
+body.dark .mermaid-stage .methodNode div {
+  color: #9ca3af !important;
+}
+
+/* Package Nodes (Amber theme) */
+body.dark .mermaid-stage .packageNode rect,
+body.dark .mermaid-stage .packageNode polygon,
+body.dark .mermaid-stage .packageNode circle,
+body.dark .mermaid-stage .packageNode path {
+  fill: #78350f !important;
+  stroke: #f59e0b !important;
+}
+body.dark .mermaid-stage .packageNode .label,
+body.dark .mermaid-stage .packageNode div {
+  color: #fef3c7 !important;
+}
+
+/* Class Nodes (Slate theme) */
+body.dark .mermaid-stage .classNode rect,
+body.dark .mermaid-stage .classNode polygon,
+body.dark .mermaid-stage .classNode circle,
+body.dark .mermaid-stage .classNode path {
+  fill: #1e293b !important;
+  stroke: #64748b !important;
+}
+body.dark .mermaid-stage .classNode .label,
+body.dark .mermaid-stage .classNode div {
+  color: #cbd5e1 !important;
+}
+
+/* Edge paths and labels */
+body.dark .mermaid-stage .edgePath .path {
+  stroke: #475569 !important;
+}
+
+body.dark .mermaid-stage .edgeLabel {
+  background-color: #0f172a !important;
+  color: #cbd5e1 !important;
+}
+
+body.dark .mermaid-stage .edgeLabel rect {
+  fill: #0f172a !important;
+}
+
+body.dark .mermaid-stage .edgeLabel span {
+  color: #cbd5e1 !important;
+}
+
+/* Subgraph labels & borders */
+body.dark .mermaid-stage .cluster rect {
+  fill: rgba(30, 41, 59, 0.25) !important;
+  stroke: #334155 !important;
+}
+
+body.dark .mermaid-stage .cluster span {
+  color: #cbd5e1 !important;
+}
+
+body.dark .mermaid-stage .cluster .label {
+  color: #cbd5e1 !important;
+}
+
+/* Dark mode overrides for primary buttons and status bar elements */
+body.dark .primary-action {
+  background: #1e293b;
+  color: #f8fafc;
+  border-color: #334155;
+  box-shadow: none;
+}
+
+body.dark .primary-action:hover:not(:disabled) {
+  background: #334155;
+}
+
+body.dark .command-group {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+body.dark .command-group span {
+  color: #94a3b8;
+}
+
+body.dark .command-group strong {
+  color: #f8fafc;
+}
+
+body.dark .command-status {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+}
+
+body.dark .command-status.busy {
+  background: rgba(250, 204, 21, 0.15);
+  border-color: rgba(250, 204, 21, 0.3);
+  color: #facc15;
+}

@@ -16,193 +16,51 @@
       </div>
     </Transition>
 
-    <header class="app-header">
-      <div class="app-bar">
-        <div class="header-title-container">
-          <button
-            class="lnb-toggle"
-            type="button"
-            @click="isLnbCollapsed = !isLnbCollapsed"
-            :title="isLnbCollapsed ? 'Show Sidebar' : 'Hide Sidebar'"
-          >
-            <svg v-if="isLnbCollapsed" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-            <svg v-else viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M15 19l-7-7 7-7"/>
-            </svg>
-          </button>
-          <div>
-            <p class="eyebrow">Graph Intelligence</p>
-            <h1>Subsystem Discovery</h1>
-          </div>
-        </div>
-        <div class="snapshot-chip">
-          <span>Analysis Time</span>
-          <strong>{{ dataset?.analysisTime || 'Not generated' }}</strong>
-        </div>
-      </div>
-    </header>
+    <AppHeader
+      :analysisTime="dataset?.analysisTime"
+      :isCollapsed="isLnbCollapsed"
+      @toggle-sidebar="isLnbCollapsed = !isLnbCollapsed"
+    />
 
     <div class="layout-grid">
-      <aside class="side-rail" :class="{ 'side-rail-collapsed': isLnbCollapsed }">
-        <div class="brand-mark">GI</div>
-        <nav>
-          <button class="nav-item active" type="button">Subsystem Discovery</button>
-        </nav>
-
-        <section class="config-block">
-          <h2>Dataset</h2>
-          <label>
-            Application
-            <select v-model="selectedTemplate">
-              <option v-for="app in applications" :key="app.value" :value="app.value">
-                {{ app.label }}
-              </option>
-            </select>
-          </label>
-          <label>
-            Node count
-            <select v-model.number="selectedNodeCount">
-              <option v-for="size in nodeCounts" :key="size" :value="size">
-                {{ formatNumber(size) }} nodes
-              </option>
-            </select>
-          </label>
-          <button class="primary-action" type="button" :disabled="loading.dataset" @click="generateDataset">
-            <svg v-if="loading.dataset" class="btn-spinner" viewBox="0 0 50 50">
-              <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
-            </svg>
-            {{ loading.dataset ? 'Generating graph...' : 'Generate graph' }}
-          </button>
-        </section>
-
-        <section class="config-block">
-          <h2>Leiden Config</h2>
-          <label>
-            <div class="label-header">
-              Runs
-              <span class="tooltip-container ">
-                <i class="tooltip-icon">ⓘ</i>
-                <span class="tooltip-box">
-                  <strong>Runs</strong><br/><br/>
-                  Number of independent Leiden algorithm executions used to build the final consensus clustering.<br/><br/>
-                  Range: 1 - 100<br/>
-                  Recommended: 5 - 20<br/>
-                  Default: 10<br/><br/>
-                  Higher values improve subsystem stability and reduce random variations but increase execution time.<br/><br/>
-                  Use:<br/>
-                  • 5-10 for quick exploration<br/>
-                  • 10-20 for production-quality subsystem discovery<br/>
-                  • 20+ for very large codebases where maximum stability is required
-                </span>
-              </span>
-            </div>
-            <input v-model.number="leiden.runs" type="number" min="1" max="100" />
-          </label>
-          <label>
-            <div class="label-header">
-              Consensus threshold
-              <span class="tooltip-container">
-                <i class="tooltip-icon">ⓘ</i>
-                <span class="tooltip-box">
-                  <strong>Consensus Threshold</strong><br/><br/>
-                  Determines how consistently nodes must appear together across multiple runs before being assigned to the same subsystem.<br/><br/>
-                  Range: 0.10 - 0.95<br/>
-                  Recommended: 0.60 - 0.80<br/>
-                  Default: 0.70<br/><br/>
-                  Lower values create larger subsystems by grouping nodes more aggressively.<br/><br/>
-                  Higher values create stricter subsystem boundaries and may produce more subsystems.<br/><br/>
-                  Examples:<br/>
-                  • 0.50 = More permissive grouping<br/>
-                  • 0.70 = Balanced discovery<br/>
-                  • 0.90 = Very strict clustering
-                </span>
-              </span>
-            </div>
-            <input v-model.number="leiden.consensusThreshold" type="number" min="0.1" max="0.95" step="0.05" />
-          </label>
-          <label>
-            <div class="label-header">
-              Resolution
-              <span class="tooltip-container ">
-                <i class="tooltip-icon">ⓘ</i>
-                <span class="tooltip-box">
-                  <strong>Resolution</strong><br/><br/>
-                  Controls the granularity of subsystem discovery.<br/><br/>
-                  Range: 0.10 - 5.00<br/>
-                  Recommended: 0.50 - 2.00<br/>
-                  Default: 1.00<br/><br/>
-                  Lower values produce fewer, larger subsystems.<br/><br/>
-                  Higher values produce more, smaller subsystems.<br/><br/>
-                  Examples:<br/>
-                  • 0.50 = Broad business domains<br/>
-                  • 1.00 = Balanced subsystem discovery<br/>
-                  • 2.00+ = Fine-grained technical modules
-                </span>
-              </span>
-            </div>
-            <input v-model.number="leiden.resolution" type="number" min="0.1" max="5" step="0.1" />
-          </label>
-          <button class="primary-action blue" type="button" :disabled="!dataset || loading.discovery" @click="runDiscovery">
-            <svg v-if="loading.discovery" class="btn-spinner" viewBox="0 0 50 50">
-              <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
-            </svg>
-            {{ loading.discovery ? 'Running Leiden...' : 'Discover subsystems' }}
-          </button>
-        </section>
-
-        <section class="config-block">
-          <h2>AI Summary</h2>
-          <label>
-            LLM model
-            <select v-model="llm.model">
-              <option v-for="option in llmModels" :key="option.value" :value="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-          </label>
-          <label>
-            Summary type
-            <select v-model="llm.summaryType">
-              <option value="LESS_DETAILED">Executive overview</option>
-              <option value="MEDIUM_DETAILED">Architecture summary</option>
-              <option value="COMPLETE_DETAILED">Detailed analysis</option>
-            </select>
-          </label>
-          <button class="primary-action dark" type="button" :disabled="!discovery || loading.summary" @click="generateSummary">
-            <svg v-if="loading.summary" class="btn-spinner" viewBox="0 0 50 50">
-              <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
-            </svg>
-            {{ loading.summary ? 'Summarizing...' : 'Generate summary' }}
-          </button>
-        </section>
-      </aside>
+      <AppSidebar
+        :isCollapsed="isLnbCollapsed"
+        :loading="loading"
+        :applications="applications"
+        :nodeCounts="nodeCounts"
+        :selectedTemplate="selectedTemplate"
+        :selectedNodeCount="selectedNodeCount"
+        :runs="leiden.runs"
+        :consensusThreshold="leiden.consensusThreshold"
+        :resolution="leiden.resolution"
+        :llmModel="llm.model"
+        :summaryType="llm.summaryType"
+        :customPrompt="llm.customPrompt"
+        :llmModels="llmModels"
+        :hasDataset="!!dataset"
+        :hasDiscovery="!!discovery"
+        @update:selectedTemplate="selectedTemplate = $event"
+        @update:selectedNodeCount="selectedNodeCount = $event"
+        @update:runs="leiden.runs = $event"
+        @update:consensusThreshold="leiden.consensusThreshold = $event"
+        @update:resolution="leiden.resolution = $event"
+        @update:llmModel="llm.model = $event"
+        @update:summaryType="llm.summaryType = $event"
+        @update:customPrompt="llm.customPrompt = $event"
+        @generate="generateDataset"
+        @discover="runDiscovery"
+        @summary="generateSummary"
+      />
 
       <main class="main-panel">
-        <section class="command-row">
-          <div class="command-group">
-            <span>Application</span>
-            <strong>{{ currentApplicationLabel }}</strong>
-          </div>
-          <div class="command-group">
-            <span>Dataset size</span>
-            <strong>{{ dataset ? formatNumber(dataset.nodeCount) : formatNumber(selectedNodeCount) }}</strong>
-          </div>
-          <div class="command-group">
-            <span>Relations</span>
-            <strong>{{ dataset ? formatNumber(dataset.relationCount) : '-' }}</strong>
-          </div>
-          <div class="command-group">
-            <span>Effective runs</span>
-            <strong>{{ discovery?.algorithm?.runs || '-' }}</strong>
-          </div>
-          <div class="command-status" :class="{ busy: isBusy }">
-            {{ statusText }}
-          </div>
-        </section>
-
-
+        <StatusBar
+          :currentApplicationLabel="currentApplicationLabel"
+          :nodeCount="dataset ? dataset.nodeCount : selectedNodeCount"
+          :relationCount="dataset ? dataset.relationCount : '-'"
+          :effectiveRuns="discovery?.algorithm?.runs || '-'"
+          :isBusy="isBusy"
+          :statusText="statusText"
+        />
 
         <section v-if="!discovery" class="empty-panel">
           <div class="empty-card">
@@ -216,194 +74,68 @@
         </section>
 
         <template v-else>
-          <section class="metrics-grid">
-            <article>
-              <span>Total nodes</span>
-              <strong>{{ formatNumber(discovery.summary.totalNodes) }}</strong>
-            </article>
-            <article>
-              <span>Total edges</span>
-              <strong>{{ formatNumber(discovery.summary.totalEdges) }}</strong>
-            </article>
-            <article>
-              <span>Subsystems</span>
-              <strong>{{ discovery.summary.subsystemCount }}</strong>
-            </article>
-            <article>
-              <div class="metric-label">
-                <span>Average stability</span>
-                <span class="tooltip-container tooltip-align-right-down">
-                  <i class="tooltip-icon">ⓘ</i>
-                  <span class="tooltip-box">
-                    <strong>Average Stability</strong><br/><br/>
-                    Average confidence score across all discovered subsystems.<br/><br/>
-                    Range: 0.00 - 1.00<br/><br/>
-                    Interpretation:<br/>
-                    • 0.90 - 1.00 = Excellent subsystem separation<br/>
-                    • 0.75 - 0.90 = Good subsystem boundaries<br/>
-                    • 0.50 - 0.75 = Moderate overlap between domains<br/>
-                    • Below 0.50 = Weak subsystem structure<br/><br/>
-                    Higher scores indicate nodes consistently clustered together across multiple Leiden runs.
-                  </span>
-                </span>
-              </div>
-              <strong>{{ discovery.summary.averageStability }}</strong>
-            </article>
-          </section>
+          <MetricsGrid
+            :totalNodes="discovery.summary.totalNodes"
+            :totalEdges="discovery.summary.totalEdges"
+            :subsystemCount="discovery.summary.subsystemCount"
+            :averageStability="discovery.summary.averageStability"
+          />
 
-          <section class="discovery-grid" ref="resizerContainerRef">
-            <aside class="tree-panel" :style="{ width: treeWidth + 'px', flex: '0 0 auto' }">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">Cluster Tree</p>
-                  <h2>Subsystems and associated nodes</h2>
-                </div>
-              </div>
+          <div class="workspace-section-header">
+            <h2>Cluster Tree Subsystems and associated nodes graph</h2>
+            <button
+              type="button"
+              class="collapse-toggle-btn icon-only"
+              @click="isDiscoveryCollapsed = !isDiscoveryCollapsed"
+              :title="isDiscoveryCollapsed ? 'Expand Viewport' : 'Collapse Viewport'"
+            >
+              <svg v-if="isDiscoveryCollapsed" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+              <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M18 15l-6-6-6 6" />
+              </svg>
+            </button>
+          </div>
 
-              <div class="cluster-list">
-                <article
-                  v-for="cluster in sortedSubsystems"
-                  :key="cluster.id"
-                  class="cluster-card"
-                  :class="{ selected: selectedClusterId === cluster.id }"
-                >
-                  <button type="button" class="cluster-main" @click="toggleCluster(cluster.id)">
-                    <span class="toggle-mark">{{ expandedClusters.has(cluster.id) ? '-' : '+' }}</span>
-                    <span>
-                      <strong>{{ cluster.name }}</strong>
-                      <small>{{ cluster.id }} / {{ formatNumber(cluster.nodeCount) }} nodes</small>
-                    </span>
-                  </button>
-
-                  <div v-if="expandedClusters.has(cluster.id)" class="cluster-detail">
-                    <div class="cluster-meta">
-                      <span>Stability {{ cluster.stabilityScore }}
-                        <span class="tooltip-container tooltip-align-left-down">
-                          <i class="tooltip-icon">ⓘ</i>
-                          <span class="tooltip-box">
-                            <strong>Stability (Cluster Level)</strong><br/><br/>
-                            Measures how consistently this subsystem was discovered across multiple Leiden executions.<br/><br/>
-                            Range: 0.00 - 1.00<br/><br/>
-                            Higher values indicate a stable business domain with strong internal cohesion.<br/><br/>
-                            Interpretation:<br/>
-                            • &gt; 0.90 = Very stable subsystem<br/>
-                            • 0.75 - 0.90 = Stable subsystem<br/>
-                            • 0.50 - 0.75 = Moderate confidence<br/>
-                            • &lt; 0.50 = Weak or overlapping subsystem
-                          </span>
-                        </span>
-                      </span>
-                      <span>Connectivity {{ cluster.internalConnectivity }}
-                        <span class="tooltip-container tooltip-align-right-down">
-                          <i class="tooltip-icon">ⓘ</i>
-                          <span class="tooltip-box">
-                            <strong>Connectivity (Cluster Level)</strong><br/><br/>
-                            Measures the density of internal dependencies within this subsystem.<br/><br/>
-                            Range: 0.00 - 1.00<br/><br/>
-                            Higher values indicate stronger relationships between classes, methods, and components inside the subsystem.<br/><br/>
-                            Interpretation:<br/>
-                            • &gt; 0.70 = Highly cohesive subsystem<br/>
-                            • 0.40 - 0.70 = Moderately connected<br/>
-                            • &lt; 0.40 = Loosely connected<br/><br/>
-                            A high connectivity score typically indicates a well-defined business capability.
-                          </span>
-                        </span>
-                      </span>
-                    </div>
-                    <p v-if="cluster.topPackages?.length">
-                      Top packages: 
-                      <span 
-                        v-for="(pkg, idx) in cluster.topPackages.slice(0, 3)" 
-                        :key="idx" 
-                        :title="pkg"
-                      >
-                        {{ truncate(pkg, 18) }}{{ idx < Math.min(2, cluster.topPackages.length - 1) ? ', ' : '' }}
-                      </span>
-                    </p>
-                    <ul>
-                      <li v-for="item in clusterItems(cluster)" :key="item.id">
-                        <span :title="item.name">{{ truncate(item.name) }}</span>
-                        <small>{{ item.type }}</small>
-                      </li>
-                    </ul>
-                  </div>
-                </article>
-              </div>
-
-            </aside>
+          <section
+            class="discovery-grid"
+            :class="{
+              'collapsed': isDiscoveryCollapsed,
+              'summary-collapsed': isSummaryCollapsed
+            }"
+            ref="resizerContainerRef"
+          >
+            <ClusterTree
+              :sortedSubsystems="sortedSubsystems"
+              :selectedClusterId="selectedClusterId"
+              :expandedClusters="expandedClusters"
+              :style="{ width: treeWidth + 'px', flex: '0 0 auto' }"
+              @toggle-cluster="toggleCluster"
+            />
 
             <div class="panel-resizer" :class="{ resizing: isResizing }" @mousedown="onResizerMouseDown">
               <div class="resizer-line"></div>
             </div>
 
-            <section class="diagram-panel" :style="{ flex: '1 1 0%', minWidth: '0' }">
-              <div
-                class="mermaid-stage"
-                ref="stageRef"
-                @mousedown="onMouseDown"
-                @mousemove="onMouseMove"
-                @mouseup="onMouseUp"
-                @mouseleave="onMouseLeave"
-                @wheel="onWheel"
-              >
-                <div v-if="mermaidSvg && !loading.discovery" class="mermaid-controls" @mousedown.stop>
-                  <button type="button" @click="zoomIn" title="Zoom In">＋</button>
-                  <button type="button" @click="zoomOut" title="Zoom Out">－</button>
-                  <button type="button" @click="resetZoom" title="Reset view">Reset</button>
-                  <span class="zoom-level">{{ Math.round(zoom * 100) }}%</span>
-                </div>
-
-                <div v-if="loading.discovery" class="diagram-skeleton">
-                  <div class="skeleton-nodes-row">
-                    <div class="skeleton-node pulsing" style="width: 70px; height: 70px; border-radius: 50%;"></div>
-                    <div class="skeleton-edge pulsing" style="width: 100px; height: 4px;"></div>
-                    <div class="skeleton-node pulsing" style="width: 90px; height: 90px; border-radius: 8px;"></div>
-                    <div class="skeleton-edge pulsing" style="width: 80px; height: 4px;"></div>
-                    <div class="skeleton-node pulsing" style="width: 70px; height: 70px; border-radius: 50%;"></div>
-                  </div>
-                  <div class="skeleton-text pulsing">Discovering subsystem boundaries using Leiden consensus clustering...</div>
-                </div>
-
-                <div
-                  v-else-if="mermaidSvg"
-                  class="mermaid-output"
-                  :style="outputStyle"
-                  v-html="mermaidSvg"
-                ></div>
-                <div v-else class="diagram-placeholder">Diagram will render after discovery.</div>
-              </div>
-
-              <!-- Merged Selected Cluster Details -->
-              <div class="selected-cluster-sidebar-card">
-                <p class="eyebrow">Selected Cluster</p>
-                <h3>{{ selectedCluster?.name || 'Select a subsystem' }}</h3>
-                <p class="selected-cluster-desc">{{ selectedCluster?.description || 'Expand or select a cluster to inspect its role.' }}</p>
-                <div v-if="selectedCluster" class="detail-stats">
-                  <span>{{ formatNumber(selectedCluster.nodeCount) }} nodes</span>
-                  <span>{{ formatNumber(selectedCluster.edgeCount) }} internal edges</span>
-                  <span>{{ selectedCluster.centralNodes?.length || 0 }} representative nodes</span>
-                </div>
-              </div>
-            </section>
+            <DiagramStage
+              ref="diagramStageRef"
+              :mermaidSvg="mermaidSvg"
+              :loadingDiscovery="loading.discovery"
+              :sortedSubsystems="sortedSubsystems"
+              :selectedCluster="selectedCluster"
+              @toggle-cluster="toggleCluster"
+            />
           </section>
 
-          <section class="summary-row-container">
-            <article class="summary-panel full-width-summary">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">Graph Intelligence Explanation</p>
-                  <h2>Architecture summary</h2>
-                </div>
-                <span v-if="actualModelDisplay" class="diagram-badge">
-                  {{ actualModelDisplay }}
-                </span>
-              </div>
-              <div class="summary-body">
-                <p v-if="!summaryText">Generate a summary after discovery to explain the subsystem boundaries.</p>
-                <div v-else class="summary-container" v-html="formattedSummaryHtml"></div>
-              </div>
-            </article>
-          </section>
+          <ArchitectureSummary
+            :summaryText="summaryText"
+            :formattedSummaryHtml="formattedSummaryHtml"
+            :actualModelDisplay="actualModelDisplay"
+            :isCollapsed="isSummaryCollapsed"
+            :isDiscoveryCollapsed="isDiscoveryCollapsed"
+            @toggle-collapse="isSummaryCollapsed = !isSummaryCollapsed"
+          />
         </template>
       </main>
     </div>
@@ -414,6 +146,18 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import axios from 'axios'
 import mermaid from 'mermaid'
+
+// Import Split Vue Components
+import AppHeader from './components/AppHeader.vue'
+import AppSidebar from './components/AppSidebar.vue'
+import StatusBar from './components/StatusBar.vue'
+import MetricsGrid from './components/MetricsGrid.vue'
+import ClusterTree from './components/ClusterTree.vue'
+import DiagramStage from './components/DiagramStage.vue'
+import ArchitectureSummary from './components/ArchitectureSummary.vue'
+
+const isDiscoveryCollapsed = ref(false)
+const isSummaryCollapsed = ref(false)
 
 mermaid.initialize({
   startOnLoad: false,
@@ -443,8 +187,7 @@ const applications = [
   { label: 'Myntra', value: 'MYNTRA' },
   { label: 'MakeMyTrip', value: 'MAKEMYTRIP' }
 ]
-// File: `poc-ui/src/App.vue`
-// Replace the existing llmModels definition with this:
+
 const llmModels = [
   { label: 'google/gemma-3-27b-it', value: 'google/gemma-3-27b-it' },
   { label: 'meta-llama/llama-3.3-70b-instruct', value: 'meta-llama/llama-3.3-70b-instruct' },
@@ -469,6 +212,8 @@ const successMessage = ref('')
 const expandedClusters = reactive(new Set())
 const summaryMeta = reactive({ provider: '', fallback: false, llmModel: '' })
 
+const diagramStageRef = ref(null)
+
 const actualModelDisplay = computed(() => {
   if (!summaryMeta.provider) return ''
   if (summaryMeta.fallback) {
@@ -480,27 +225,10 @@ const actualModelDisplay = computed(() => {
   return summaryMeta.llmModel || summaryMeta.provider
 })
 
-const stageRef = ref(null)
-const zoom = ref(1)
-const pan = reactive({ x: 0, y: 0 })
-const isDragging = ref(false)
-const dragStart = reactive({ x: 0, y: 0 })
-
 const isLnbCollapsed = ref(false)
 const treeWidth = ref(380)
 const isResizing = ref(false)
 const resizerContainerRef = ref(null)
-
-const outputStyle = computed(() => {
-  return {
-    transform: `translate(${pan.x}px, ${pan.y}px)`,
-    transition: isDragging.value ? 'none' : 'transform 0.1s ease-out',
-    display: 'inline-block',
-    userSelect: 'none',
-    width: `${Math.round(zoom.value * 100)}%`,
-    height: 'auto'
-  }
-})
 
 watch(successMessage, (newVal) => {
   if (newVal) {
@@ -530,7 +258,8 @@ const leiden = reactive({
 
 const llm = reactive({
   model: 'deepseek/deepseek-chat',
-  summaryType: 'MEDIUM_DETAILED'
+  summaryType: 'MEDIUM_DETAILED',
+  customPrompt: ''
 })
 
 const loading = reactive({
@@ -562,13 +291,6 @@ const statusText = computed(() => {
   return 'Ready'
 })
 
-const formattedSummary = computed(() => {
-  return summaryText.value
-    .split(/\n{2,}/)
-    .map((value) => value.replace(/\s+/g, ' ').trim())
-    .filter(Boolean)
-})
-
 watch(
   () => [discovery.value, Array.from(expandedClusters).join('|')],
   async () => {
@@ -591,7 +313,7 @@ async function generateDataset() {
   summaryMeta.provider = ''
   summaryMeta.fallback = false
   expandedClusters.clear()
-  resetZoom()
+  diagramStageRef.value?.resetZoom()
 
   try {
     const response = await axios.post(`${API_BASE}/dataset/generate`, null, {
@@ -619,7 +341,7 @@ async function runDiscovery() {
   summaryMeta.provider = ''
   summaryMeta.fallback = false
   expandedClusters.clear()
-  resetZoom()
+  diagramStageRef.value?.resetZoom()
 
   try {
     const response = await axios.post(`${API_BASE}/discover`, null, {
@@ -651,7 +373,8 @@ async function generateSummary() {
       params: {
         ...discoveryParams(),
         llmModel: llm.model,
-        summaryType: llm.summaryType
+        summaryType: llm.summaryType,
+        customPrompt: llm.customPrompt
       }
     })
     summaryText.value = response.data.summary
@@ -688,131 +411,16 @@ function toggleCluster(clusterId) {
   }
 }
 
-function representativeNodes(cluster) {
-  const nodes = cluster.centralNodes || []
-  return nodes.slice(0, 12)
-}
-
-function clusterItems(cluster) {
-  const items = []
-  
-  if (cluster.apiEndpoints) {
-    cluster.apiEndpoints.forEach(api => {
-      items.push({
-        id: `api-${api.id}`,
-        name: `${api.method} ${api.path}`,
-        type: 'API'
-      })
-    })
-  }
-  
-  if (cluster.centralNodes) {
-    cluster.centralNodes.forEach(node => {
-      items.push({
-        id: `node-${node.id}`,
-        name: node.name,
-        type: node.type
-      })
-    })
-  }
-  
-  return items.slice(0, 15)
-}
-
-function truncate(str, len = 24) {
-  if (!str) return ''
-  if (str.length <= len) return str
-  return str.substring(0, len - 3) + '...'
-}
-
 async function renderMermaid() {
   try {
     const graph = buildMermaidGraph()
     const renderId = `gi-mermaid-${Date.now()}-${Math.round(Math.random() * 10000)}`
     const { svg } = await mermaid.render(renderId, graph)
     mermaidSvg.value = svg
-    await nextTick()
-    attachNodeClickListeners()
   } catch (error) {
     mermaidSvg.value = ''
     errorMessage.value = `Mermaid rendering failed: ${error.message}`
   }
-}
-
-function onMouseDown(e) {
-  if (e.button !== 0) return
-  if (e.target.closest('.mermaid-controls')) return
-  isDragging.value = true
-  dragStart.x = e.clientX - pan.x
-  dragStart.y = e.clientY - pan.y
-}
-
-function onMouseMove(e) {
-  if (!isDragging.value) return
-  pan.x = e.clientX - dragStart.x
-  pan.y = e.clientY - dragStart.y
-}
-
-function onMouseUp() {
-  isDragging.value = false
-}
-
-function onMouseLeave() {
-  isDragging.value = false
-}
-
-function onWheel(e) {
-  e.preventDefault()
-  const zoomFactor = 0.08
-  const direction = e.deltaY < 0 ? 1 : -1
-  const newZoom = zoom.value + direction * zoomFactor * zoom.value
-  zoom.value = Math.max(0.1, Math.min(10, newZoom))
-}
-
-function zoomIn() {
-  zoom.value = Math.min(10, zoom.value + 0.15 * zoom.value)
-}
-
-function zoomOut() {
-  zoom.value = Math.max(0.1, zoom.value - 0.15 * zoom.value)
-}
-
-function resetZoom() {
-  zoom.value = 1
-  pan.x = 0
-  pan.y = 0
-}
-
-function attachNodeClickListeners() {
-  const stage = stageRef.value
-  if (!stage) return
-  const rootNodes = stage.querySelectorAll('[id*="_root"]')
-  rootNodes.forEach((node) => {
-    const fullId = node.getAttribute('id')
-    const match = fullId.match(/(m_[a-z0-9_]+)_root/)
-    if (match) {
-      const clusterMermaidId = match[1]
-      node.style.cursor = 'pointer'
-      
-      // Highlight on hover
-      node.style.transition = 'opacity 0.15s ease'
-      node.addEventListener('mouseenter', () => {
-        node.style.opacity = '0.75'
-      })
-      node.addEventListener('mouseleave', () => {
-        node.style.opacity = '1'
-      })
-
-      // Click event
-      node.addEventListener('click', (e) => {
-        e.stopPropagation()
-        const cluster = sortedSubsystems.value.find(c => mermaidId(c.id) === clusterMermaidId)
-        if (cluster) {
-          toggleCluster(cluster.id)
-        }
-      })
-    }
-  })
 }
 
 function onResizerMouseDown(e) {
@@ -862,7 +470,6 @@ function buildMermaidGraph() {
       const controllers = classes.filter(c => c.name.endsWith('Controller') || c.name.endsWith('Client'))
       const services = classes.filter(c => c.name.endsWith('Service') || c.name.endsWith('Policy') || c.name.endsWith('Workflow'))
       const repos = classes.filter(c => c.name.endsWith('Repository') || c.name.endsWith('Mapper') || c.name.endsWith('Dao'))
-      const otherClasses = classes.filter(c => !controllers.includes(c) && !services.includes(c) && !repos.includes(c))
 
       // Draw APIs
       apis.forEach((api, index) => {

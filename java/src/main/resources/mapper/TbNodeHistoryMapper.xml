@@ -3,10 +3,10 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.example.subsystemdiscovery.extraction.mapper.TbNodeHistoryMapper">
+<mapper namespace="com.example.subsystemdiscovery.repository.TbNodeHistoryMapper">
 
     <resultMap id="NodeRowResultMap"
-               type="com.example.subsystemdiscovery.extraction.entity.NodeRow">
+               type="com.example.subsystemdiscovery.repository.entity.NodeRow">
         <constructor>
             <idArg column="node_id" javaType="String"/>
             <arg column="node_name" javaType="String"/>
@@ -15,7 +15,7 @@
     </resultMap>
 
     <resultMap id="ApplicationMetadataResultMap"
-               type="com.example.subsystemdiscovery.extraction.entity.ApplicationMetadata">
+               type="com.example.subsystemdiscovery.repository.entity.ApplicationMetadata">
         <constructor>
             <arg column="application_id" javaType="Long"/>
             <arg column="application_key" javaType="String"/>
@@ -23,7 +23,7 @@
     </resultMap>
 
     <resultMap id="NodeDetailRowResultMap"
-               type="com.example.subsystemdiscovery.extraction.entity.NodeDetailRow">
+               type="com.example.subsystemdiscovery.repository.entity.NodeDetailRow">
         <constructor>
             <idArg column="node_id" javaType="String"/>
             <arg column="split_node_level" javaType="Integer"/>
@@ -33,7 +33,7 @@
     </resultMap>
 
     <resultMap id="NodeLinkRowResultMap"
-               type="com.example.subsystemdiscovery.extraction.entity.NodeLinkRow">
+               type="com.example.subsystemdiscovery.repository.entity.NodeLinkRow">
         <constructor>
             <arg column="from_key" javaType="String"/>
             <arg column="to_key" javaType="String"/>
